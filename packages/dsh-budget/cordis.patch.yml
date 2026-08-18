@@ -1,0 +1,7 @@
+# dsh-budget — bundle patch layer.
+# Installing this package (`dsh plugin --profile web add @yugasun/dsh-budget`) appends
+# it to the profile's bundle stack. The web client half is discovered from
+# package.json `dsh.client` and does not need its own patch row.
+- insert:
+    - id: dsh-budget
+      name: dsh-budget
