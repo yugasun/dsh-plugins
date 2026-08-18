@@ -2,7 +2,15 @@ import { AUTO_PROVIDER_ORDER, type Config } from './config.ts'
 import type { EnvLookup } from './env.ts'
 import { firstEnv } from './env.ts'
 import { firstNonEmpty, isPositiveInteger, isValidBaseUrl } from './errors.ts'
-import { BUILTIN_SEAM_PROVIDER_ID, SEAM_PROVIDER_ID, type PluginStatus, type ProviderId, type ProviderStatus } from './types.ts'
+import {
+  BUILTIN_FETCH_PROVIDER_ID,
+  BUILTIN_SEAM_PROVIDER_ID,
+  SEAM_PROVIDER_ID,
+  type FetchProviderId,
+  type PluginStatus,
+  type ProviderId,
+  type ProviderStatus,
+} from './types.ts'
 
 export interface ResolvedSecrets {
   baiduApiKey: string
@@ -83,6 +91,49 @@ export function pinWebSearchProvider(web: { searchProviderId?: string }, config:
   web.searchProviderId = configuredSeamProviderId(config)
 }
 
+export function isFetchBackend(id: ProviderId | null): id is FetchProviderId {
+  return id === 'tavily' || id === 'exa'
+}
+
+/** Tavily/Exa page extract, or DSH built-in HTTP when those backends are not active. */
+export function selectFetchBackend(config: Config, secrets: ResolvedSecrets): FetchProviderId | null {
+  if (config.customSearch === false) return null
+  const active = selectActive(config, secrets)
+  if (isFetchBackend(active)) return active
+  if (config.searchProvider === 'tavily' || config.searchProvider === 'exa') {
+    return providerEndpointReady(config.searchProvider, config) ? config.searchProvider : null
+  }
+  return null
+}
+
+export function configuredFetchProviderId(
+  config: Config,
+  secrets: ResolvedSecrets,
+): typeof SEAM_PROVIDER_ID | typeof BUILTIN_FETCH_PROVIDER_ID {
+  return selectFetchBackend(config, secrets) !== null ? SEAM_PROVIDER_ID : BUILTIN_FETCH_PROVIDER_ID
+}
+
+export function fetchFacadeAvailable(config: Config, secrets: ResolvedSecrets): boolean {
+  return selectFetchBackend(config, secrets) !== null
+}
+
+export function pinWebFetchProvider(
+  web: { fetchProviderId?: string },
+  config: Config,
+  secrets: ResolvedSecrets,
+): void {
+  web.fetchProviderId = configuredFetchProviderId(config, secrets)
+}
+
+export function pinWebSeams(
+  web: { searchProviderId?: string; fetchProviderId?: string },
+  config: Config,
+  secrets: ResolvedSecrets,
+): void {
+  pinWebSearchProvider(web, config)
+  pinWebFetchProvider(web, config, secrets)
+}
+
 /** The facade is selectable when custom search is on and a backend is usable or pinned. */
 export function facadeAvailable(config: Config, secrets: ResolvedSecrets): boolean {
   if (config.customSearch === false) return false
@@ -115,6 +166,7 @@ export function pluginStatus(config: Config, secrets: ResolvedSecrets): PluginSt
   return {
     customSearch: config.customSearch !== false,
     seamProvider: configuredSeamProviderId(config),
+    fetchProvider: configuredFetchProviderId(config, secrets),
     searchProvider: config.searchProvider,
     active: config.customSearch !== false ? selectActive(config, secrets) : null,
     providers,

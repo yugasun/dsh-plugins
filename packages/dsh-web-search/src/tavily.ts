@@ -1,6 +1,15 @@
-import type { WebSearchProvider, WebSearchRequest, WebSearchResult, WebSearchSource } from '@deepseek-ai/dsh-web'
+import type {
+  WebFetchProvider,
+  WebFetchRequest,
+  WebFetchResult,
+  WebSearchProvider,
+  WebSearchRequest,
+  WebSearchResult,
+  WebSearchSource,
+} from '@deepseek-ai/dsh-web'
 import type { Config } from './config.ts'
-import { toIsoDate } from './errors.ts'
+import { requireHttpUrl, toIsoDate } from './errors.ts'
+import { failedFetchResult, textFetchResult } from './fetch-result.ts'
 import { postJson } from './http.ts'
 import { isSelected, type ResolvedSecrets } from './select.ts'
 
@@ -16,6 +25,48 @@ export interface TavilyResult {
 export interface TavilySearchResponse {
   answer?: string
   results?: TavilyResult[]
+}
+
+export interface TavilyExtractResult {
+  url?: string
+  raw_content?: string | null
+}
+
+export interface TavilyFailedExtract {
+  url?: string
+  error?: string
+}
+
+export interface TavilyExtractResponse {
+  results?: TavilyExtractResult[]
+  failed_results?: TavilyFailedExtract[]
+}
+
+export function mapTavilyExtractResponse(
+  requestUrl: string,
+  response: TavilyExtractResponse,
+): WebFetchResult {
+  const hit = (response.results ?? []).find((result) => {
+    const url = result.url?.trim()
+    return url != null && url.length > 0
+  })
+  const content = hit?.raw_content?.trim()
+  if (content != null && content.length > 0) {
+    return textFetchResult(hit?.url?.trim() || requestUrl, content)
+  }
+  const failed = (response.failed_results ?? []).find((result) => {
+    const url = result.url?.trim()
+    return url == null || url.length === 0 || urlsMatch(url, requestUrl)
+  })
+  const message = failed?.error?.trim()
+  return failedFetchResult(
+    failed?.url?.trim() || requestUrl,
+    message != null && message.length > 0 ? message : 'Tavily extract returned no content',
+  )
+}
+
+function urlsMatch(left: string, right: string): boolean {
+  return left === right || left.replace(/\/$/, '') === right.replace(/\/$/, '')
 }
 
 export function mapTavilyResult(result: TavilyResult): WebSearchSource | undefined {
@@ -42,7 +93,7 @@ export function mapTavilyResponse(response: TavilySearchResponse): WebSearchResu
   }
 }
 
-export class TavilySearchProvider implements WebSearchProvider {
+export class TavilySearchProvider implements WebSearchProvider, WebFetchProvider {
   readonly id = TAVILY_PROVIDER_ID
 
   constructor(
@@ -71,5 +122,23 @@ export class TavilySearchProvider implements WebSearchProvider {
       signal,
     )
     return mapTavilyResponse(payload as TavilySearchResponse)
+  }
+
+  async fetch(request: WebFetchRequest, signal?: AbortSignal): Promise<WebFetchResult> {
+    const parsed = requireHttpUrl(request.url)
+    const { config, secrets } = this.resolve()
+    const payload = await postJson(
+      'Tavily',
+      `${config.tavilyBaseURL.replace(/\/$/, '')}/extract`,
+      { authorization: `Bearer ${secrets.tavilyApiKey}` },
+      {
+        urls: [parsed.toString()],
+        extract_depth: config.tavilyExtractDepth,
+        format: 'markdown',
+        include_images: false,
+      },
+      signal,
+    )
+    return mapTavilyExtractResponse(parsed.toString(), payload as TavilyExtractResponse)
   }
 }

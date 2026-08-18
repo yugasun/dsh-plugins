@@ -1,6 +1,15 @@
-import type { WebSearchProvider, WebSearchRequest, WebSearchResult, WebSearchSource } from '@deepseek-ai/dsh-web'
+import type {
+  WebFetchProvider,
+  WebFetchRequest,
+  WebFetchResult,
+  WebSearchProvider,
+  WebSearchRequest,
+  WebSearchResult,
+  WebSearchSource,
+} from '@deepseek-ai/dsh-web'
 import type { Config } from './config.ts'
-import { toIsoDate } from './errors.ts'
+import { requireHttpUrl, toIsoDate } from './errors.ts'
+import { failedFetchResult, MAX_FETCH_CHARS, textFetchResult } from './fetch-result.ts'
 import { postJson } from './http.ts'
 import { isSelected, type ResolvedSecrets } from './select.ts'
 
@@ -37,7 +46,26 @@ export function mapExaResponse(response: ExaSearchResponse): WebSearchResult {
   return { sources, truncated: false }
 }
 
-export class ExaSearchProvider implements WebSearchProvider {
+export interface ExaContentsResponse {
+  results?: ExaResult[]
+}
+
+export function mapExaContentsResponse(
+  requestUrl: string,
+  response: ExaContentsResponse,
+): WebFetchResult {
+  const hit = (response.results ?? []).find((result) => {
+    const url = result.url?.trim()
+    return url != null && url.length > 0
+  })
+  const content = hit?.text?.trim()
+  if (content != null && content.length > 0) {
+    return textFetchResult(hit?.url?.trim() || requestUrl, content)
+  }
+  return failedFetchResult(hit?.url?.trim() || requestUrl, 'Exa contents returned no text')
+}
+
+export class ExaSearchProvider implements WebSearchProvider, WebFetchProvider {
   constructor(
     private readonly resolve: () => { config: Config; secrets: ResolvedSecrets },
   ) {}
@@ -68,5 +96,22 @@ export class ExaSearchProvider implements WebSearchProvider {
       signal,
     )
     return mapExaResponse(payload as ExaSearchResponse)
+  }
+
+  async fetch(request: WebFetchRequest, signal?: AbortSignal): Promise<WebFetchResult> {
+    const parsed = requireHttpUrl(request.url)
+    const { config, secrets } = this.resolve()
+    const payload = await postJson(
+      'Exa',
+      `${config.exaBaseURL.replace(/\/$/, '')}/contents`,
+      { authorization: `Bearer ${secrets.exaApiKey}` },
+      {
+        urls: [parsed.toString()],
+        ids: [parsed.toString()],
+        text: { maxCharacters: MAX_FETCH_CHARS },
+      },
+      signal,
+    )
+    return mapExaContentsResponse(parsed.toString(), payload as ExaContentsResponse)
   }
 }

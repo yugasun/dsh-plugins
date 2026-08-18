@@ -18,13 +18,19 @@ export interface WebServer {
 export interface WebRuntime {
   /**
    * Runtime-writable even though `@deepseek-ai/dsh-web` types it private.
-   * Selection reads this field on every `search()`.
+   * Selection reads these fields on every `search()` / `fetch()`.
    */
   searchProviderId?: string
+  fetchProviderId?: string
   registerSearchProvider(provider: {
     readonly id: string
     available(): boolean
     search(request: unknown, signal?: AbortSignal): Promise<unknown>
+  }): () => void
+  registerFetchProvider(provider: {
+    readonly id: string
+    available(): boolean
+    fetch(request: unknown, signal?: AbortSignal): Promise<unknown>
   }): () => void
 }
 

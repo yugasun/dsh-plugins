@@ -371,6 +371,20 @@ export function SearchCard(props: SearchCardProps) {
                     onChange: (next) => set('tavilySearchDepth', next),
                   }),
                 }),
+                h(Field, {
+                  key: 'tavily-extract',
+                  label: props.t('tavilyExtract'),
+                  hint: props.t('tavilyExtractHint'),
+                  children: h(SelectField, {
+                    value: value.tavilyExtractDepth ?? 'basic',
+                    disabled,
+                    options: [
+                      { id: 'basic', label: props.t('depthBasic') },
+                      { id: 'advanced', label: props.t('depthAdvanced') },
+                    ],
+                    onChange: (next) => set('tavilyExtractDepth', next),
+                  }),
+                }),
                 h(
                   'details',
                   { key: 'tavily-endpoint', className: 'dshWebSearchDetails' },

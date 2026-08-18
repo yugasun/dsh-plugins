@@ -13,6 +13,7 @@ export interface ClientConfig {
   tavilyApiKey: string
   tavilyBaseURL: string
   tavilySearchDepth: 'basic' | 'advanced' | 'fast' | 'ultra-fast'
+  tavilyExtractDepth: 'basic' | 'advanced'
   exaApiKey: string
   exaBaseURL: string
   exaSearchType: 'auto' | 'keyword' | 'neural'
@@ -29,6 +30,7 @@ export interface ProviderStatus {
 export interface PluginStatus {
   customSearch: boolean
   seamProvider: 'dsh-web-search' | 'deepseek-official'
+  fetchProvider: 'dsh-web-search' | 'http'
   searchProvider: SearchProviderChoice
   active: ProviderId | null
   providers: ProviderStatus[]
@@ -43,6 +45,7 @@ export interface SettingsScope<T> {
 export const EMPTY_STATUS: PluginStatus = {
   customSearch: true,
   seamProvider: 'dsh-web-search',
+  fetchProvider: 'http',
   searchProvider: 'auto',
   active: null,
   providers: [
