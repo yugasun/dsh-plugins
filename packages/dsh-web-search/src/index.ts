@@ -7,8 +7,8 @@ import { DoubaoSearchProvider } from './doubao.ts'
 import { launchEnvLookup } from './env.ts'
 import { ExaSearchProvider } from './exa.ts'
 import type { HostContext } from './host-types.ts'
-import { PluginSearchProvider } from './provider.ts'
-import { mergeSecrets, pinWebSearchProvider, pluginStatus, resolveSecrets, type ResolvedSecrets } from './select.ts'
+import { PluginFetchProvider, PluginSearchProvider } from './provider.ts'
+import { mergeSecrets, pinWebSeams, pluginStatus, resolveSecrets, type ResolvedSecrets } from './select.ts'
 import { TavilySearchProvider } from './tavily.ts'
 
 export const name = 'dsh-web-search'
@@ -33,9 +33,10 @@ export function apply(ctx: Context, config: Config): void {
 
   const refreshOverlay = async () => {
     overlay = await credentialOverlay(host.get('credentials') as Credentials | undefined)
+    pinSeam()
   }
 
-  const pinSeam = () => pinWebSearchProvider(host.web, source())
+  const pinSeam = () => pinWebSeams(host.web, source(), resolve().secrets)
 
   installSettingsSection(ctx, NS, Config, config, {
     setSource: (current) => {
@@ -48,13 +49,21 @@ export function apply(ctx: Context, config: Config): void {
   })
   pinSeam()
 
+  const tavily = new TavilySearchProvider(resolve)
+  const exa = new ExaSearchProvider(resolve)
+
   host.web.registerSearchProvider(new PluginSearchProvider(
     {
       baidu: new BaiduSearchProvider(resolve),
       doubao: new DoubaoSearchProvider(resolve),
-      tavily: new TavilySearchProvider(resolve),
-      exa: new ExaSearchProvider(resolve),
+      tavily,
+      exa,
     },
+    resolve,
+    refreshOverlay,
+  ))
+  host.web.registerFetchProvider(new PluginFetchProvider(
+    { tavily, exa },
     resolve,
     refreshOverlay,
   ))
@@ -71,7 +80,7 @@ export function apply(ctx: Context, config: Config): void {
     promptCtx.systemPrompt?.section({
       name: 'plugin:dsh-web-search',
       order: 111,
-      text: 'Use the web_search tool for live web lookup. Settings → Web search chooses DSH built-in DeepSeek search or a custom backend (Baidu, Doubao, Tavily, Exa). Custom keys live there and are stripped from the shell. Do not curl Tavily, and do not look for TAVILY_API_KEY in env or config files.',
+      text: 'Use web_search for live lookup and web_fetch for page content. Settings → Web search chooses DSH built-in DeepSeek search or a custom backend (Baidu, Doubao, Tavily, Exa). When Tavily or Exa is active, web_fetch uses that vendor extract/contents API; otherwise it stays on DSH built-in http. Custom keys live there and are stripped from the shell. Do not curl Tavily or Exa, and do not look for TAVILY_API_KEY or EXA_API_KEY in env or config files.',
     })
   })
 
@@ -90,5 +99,5 @@ export function apply(ctx: Context, config: Config): void {
     }), 'dsh-web-search: http')
   })
 
-  host.logger?.info?.('[dsh-web-search] search facade registered as dsh-web-search')
+  host.logger?.info?.('[dsh-web-search] search/fetch facade registered as dsh-web-search')
 }

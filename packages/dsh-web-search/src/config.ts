@@ -14,6 +14,7 @@ export interface Config {
   tavilyApiKey: string
   tavilyBaseURL: string
   tavilySearchDepth: 'basic' | 'advanced' | 'fast' | 'ultra-fast'
+  tavilyExtractDepth: 'basic' | 'advanced'
   exaApiKey: string
   exaBaseURL: string
   exaSearchType: 'auto' | 'keyword' | 'neural'
@@ -46,6 +47,7 @@ export const Config: Schema<Config> = Schema.object({
   tavilyApiKey: Schema.string().role('secret').default(''),
   tavilyBaseURL: Schema.string().default(TAVILY_DEFAULT_BASE_URL),
   tavilySearchDepth: Schema.union(['basic', 'advanced', 'fast', 'ultra-fast'] as const).default('basic'),
+  tavilyExtractDepth: Schema.union(['basic', 'advanced'] as const).default('basic'),
   exaApiKey: Schema.string().role('secret').default(''),
   exaBaseURL: Schema.string().default(EXA_DEFAULT_BASE_URL),
   exaSearchType: Schema.union(['auto', 'keyword', 'neural'] as const).default('auto'),
@@ -65,6 +67,7 @@ export const DEFAULT_CONFIG: Config = {
   tavilyApiKey: '',
   tavilyBaseURL: TAVILY_DEFAULT_BASE_URL,
   tavilySearchDepth: 'basic',
+  tavilyExtractDepth: 'basic',
   exaApiKey: '',
   exaBaseURL: EXA_DEFAULT_BASE_URL,
   exaSearchType: 'auto',

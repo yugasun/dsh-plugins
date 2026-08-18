@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_CONFIG, type Config } from '../src/config.ts'
 import type { EnvLookup } from '../src/env.ts'
 import { secretCommit, secretDisplay, SECRET_MASK } from '../src/client/secret-field.ts'
-import { configuredSeamProviderId, facadeAvailable, mergeSecrets, listAvailable, pinWebSearchProvider, pluginStatus, resolveSecrets, selectActive } from '../src/select.ts'
+import { configuredSeamProviderId, facadeAvailable, fetchFacadeAvailable, mergeSecrets, listAvailable, pinWebSeams, pluginStatus, resolveSecrets, selectActive, selectFetchBackend } from '../src/select.ts'
 import { credentialOverlay } from '../src/credentials.ts'
-import { PluginSearchProvider } from '../src/provider.ts'
-import { BUILTIN_SEAM_PROVIDER_ID, SEAM_PROVIDER_ID } from '../src/types.ts'
+import { PluginFetchProvider, PluginSearchProvider } from '../src/provider.ts'
+import { BUILTIN_FETCH_PROVIDER_ID, BUILTIN_SEAM_PROVIDER_ID, SEAM_PROVIDER_ID } from '../src/types.ts'
 
 function config(patch: Partial<Config> = {}): Config {
   return { ...DEFAULT_CONFIG, ...patch }
@@ -118,17 +118,47 @@ describe('customSearch switch', () => {
       seamProvider: BUILTIN_SEAM_PROVIDER_ID,
       active: null,
     })
-    const web = { searchProviderId: SEAM_PROVIDER_ID }
-    pinWebSearchProvider(web, current)
+    const web = { searchProviderId: SEAM_PROVIDER_ID, fetchProviderId: SEAM_PROVIDER_ID }
+    pinWebSeams(web, current, secrets)
     expect(web.searchProviderId).toBe(BUILTIN_SEAM_PROVIDER_ID)
+    expect(web.fetchProviderId).toBe(BUILTIN_FETCH_PROVIDER_ID)
   })
 
   it('pins this plugin when custom search is on', () => {
     const current = config({ customSearch: true })
     expect(configuredSeamProviderId(current)).toBe(SEAM_PROVIDER_ID)
-    const web = { searchProviderId: BUILTIN_SEAM_PROVIDER_ID }
-    pinWebSearchProvider(web, current)
+    const secrets = resolveSecrets(current, env())
+    const web = { searchProviderId: BUILTIN_SEAM_PROVIDER_ID, fetchProviderId: BUILTIN_FETCH_PROVIDER_ID }
+    pinWebSeams(web, current, secrets)
     expect(web.searchProviderId).toBe(SEAM_PROVIDER_ID)
+    expect(web.fetchProviderId).toBe(BUILTIN_FETCH_PROVIDER_ID)
+  })
+})
+
+describe('fetch backend', () => {
+  it('pins Tavily extract when Tavily is the active search backend', () => {
+    const current = config({ tavilyApiKey: 'tvly-test-key' })
+    const secrets = resolveSecrets(current, env())
+    expect(selectFetchBackend(current, secrets)).toBe('tavily')
+    expect(fetchFacadeAvailable(current, secrets)).toBe(true)
+    expect(pluginStatus(current, secrets).fetchProvider).toBe(SEAM_PROVIDER_ID)
+    const web = { searchProviderId: '', fetchProviderId: '' }
+    pinWebSeams(web, current, secrets)
+    expect(web.fetchProviderId).toBe(SEAM_PROVIDER_ID)
+  })
+
+  it('keeps built-in http fetch when Baidu is active', () => {
+    const current = config({ baiduApiKey: 'baidu-test-key', tavilyApiKey: 'tvly-test-key' })
+    const secrets = resolveSecrets(current, env())
+    expect(selectActive(current, secrets)).toBe('baidu')
+    expect(selectFetchBackend(current, secrets)).toBeNull()
+    expect(pluginStatus(current, secrets).fetchProvider).toBe(BUILTIN_FETCH_PROVIDER_ID)
+  })
+
+  it('pins Exa contents when Exa is explicit', () => {
+    const current = config({ searchProvider: 'exa', exaApiKey: 'exa-test-key' })
+    const secrets = resolveSecrets(current, env())
+    expect(selectFetchBackend(current, secrets)).toBe('exa')
   })
 })
 
@@ -202,6 +232,60 @@ describe('PluginSearchProvider', () => {
     await expect(provider.search({ query: 'hello' })).rejects.toMatchObject({
       name: 'WebError',
       code: 'WEB_PROVIDER_CONFIGURED_UNAVAILABLE',
+    })
+  })
+})
+
+describe('PluginFetchProvider', () => {
+  it('dispatches extract to Tavily', async () => {
+    const current = config({ searchProvider: 'tavily', tavilyApiKey: 'tvly-test-key' })
+    const secrets = resolveSecrets(current, env())
+    const tavily = {
+      id: 'tavily',
+      available: () => true,
+      fetch: async () => ({
+        url: 'https://example.com',
+        statusCode: 200,
+        body: { kind: 'text' as const, content: 'page' },
+        truncated: false,
+      }),
+    }
+    const unused = {
+      id: 'exa',
+      available: () => false,
+      fetch: async () => {
+        throw new Error('should not fetch exa')
+      },
+    }
+    const provider = new PluginFetchProvider(
+      { tavily, exa: unused },
+      () => ({ config: current, secrets }),
+      async () => {},
+    )
+    expect(provider.available()).toBe(true)
+    const result = await provider.fetch({ url: 'https://example.com' })
+    expect(result.body).toEqual({ kind: 'text', content: 'page' })
+  })
+
+  it('explains a missing Tavily key for fetch', async () => {
+    const current = config({ searchProvider: 'tavily' })
+    const secrets = { baiduApiKey: '', doubaoApiKey: '', tavilyApiKey: '', exaApiKey: '' }
+    const unused = {
+      id: 'tavily',
+      available: () => false,
+      fetch: async () => {
+        throw new Error('should not fetch')
+      },
+    }
+    const provider = new PluginFetchProvider(
+      { tavily: unused, exa: unused },
+      () => ({ config: current, secrets }),
+      async () => {},
+    )
+    expect(provider.available()).toBe(true)
+    await expect(provider.fetch({ url: 'https://example.com' })).rejects.toMatchObject({
+      name: 'WebError',
+      code: 'WEB_PROVIDER_CREDENTIAL_MISSING',
     })
   })
 })

@@ -12,11 +12,9 @@
 
 | 包 | npm | 安装 |
 | --- | --- | --- |
-| [dsh-budget](packages/dsh-budget) | [@yugasun/dsh-budget](https://www.npmjs.com/package/@yugasun/dsh-budget) | `dsh plugin --profile web add @yugasun/dsh-budget` |
 | [dsh-web-search](packages/dsh-web-search) | [@yugasun/dsh-web-search](https://www.npmjs.com/package/@yugasun/dsh-web-search) | `dsh plugin --profile web add @yugasun/dsh-web-search` |
 
-- **dsh-budget** — 工具输出上限：截过长的纯文本工具结果（包括官方 spill 会跳过的 `read`）
-- **dsh-web-search** — 多后端网页搜索：百度、豆包、Tavily、Exa，注册进 `ctx.web`
+**dsh-web-search** — 多后端网页搜索：百度、豆包、Tavily、Exa。Tavily / Exa 生效时，`web_fetch` 走对应提取接口。
 
 安装插件会在 Harness 进程内以你的权限运行第三方代码。安装前请阅读源码。
 
@@ -34,15 +32,14 @@ pnpm build
 把本地仓库装进 web profile：
 
 ```sh
-dsh plugin --profile web add "$PWD/packages/dsh-budget"
 dsh plugin --profile web add "$PWD/packages/dsh-web-search"
-dsh --profile web --dump-config | grep -E 'dsh-budget|dsh-web-search'
+dsh --profile web --dump-config | grep dsh-web-search
 ```
 
 从 Git 子目录安装：
 
 ```sh
-dsh plugin --profile web add github:yugasun/dsh-plugins#path:packages/dsh-budget
+dsh plugin --profile web add github:yugasun/dsh-plugins#path:packages/dsh-web-search
 ```
 
 pnpm ≥10 第一次从 Git 安装时可能会询问是否允许 `prepare` 脚本（`allowBuilds`）。
@@ -52,7 +49,6 @@ pnpm ≥10 第一次从 Git 安装时可能会询问是否允许 `prepare` 脚�
 `npm login` 之后：
 
 ```sh
-pnpm --filter @yugasun/dsh-budget publish
 pnpm --filter @yugasun/dsh-web-search publish
 ```
 

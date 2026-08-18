@@ -1,4 +1,4 @@
-import { abortSearch, isAbortError, providerFailed } from './errors.ts'
+import { abortRequest, isAbortError, providerFailed } from './errors.ts'
 import { USER_AGENT } from './types.ts'
 
 export interface JsonErrorBody {
@@ -30,8 +30,8 @@ export async function postJson(
       ...(signal === undefined ? {} : { signal }),
     })
   } catch (error: unknown) {
-    if (isAbortError(error)) abortSearch(label, error)
-    providerFailed(`${label} search request failed: ${String(error)}`, error)
+    if (isAbortError(error)) abortRequest(label, error)
+    providerFailed(`${label} request failed: ${String(error)}`, error)
   }
 
   if (!response.ok) {
@@ -42,7 +42,7 @@ export async function postJson(
       const detail = extractErrorMessage(parsed)
       if (detail.length > 0) message = detail
     } catch (error: unknown) {
-      if (isAbortError(error)) abortSearch(label, error)
+      if (isAbortError(error)) abortRequest(label, error)
     }
     providerFailed(message)
   }
@@ -50,7 +50,7 @@ export async function postJson(
   try {
     return await response.json()
   } catch (error: unknown) {
-    if (isAbortError(error)) abortSearch(label, error)
+    if (isAbortError(error)) abortRequest(label, error)
     providerFailed(`${label} returned an unprocessable response body: ${String(error)}`, error)
   }
 }

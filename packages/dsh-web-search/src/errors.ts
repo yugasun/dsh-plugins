@@ -5,12 +5,37 @@ export function isAbortError(error: unknown): boolean {
     || (error instanceof Error && error.name === 'AbortError')
 }
 
-export function abortSearch(label: string, cause?: unknown): never {
+export function abortRequest(label: string, cause?: unknown): never {
   throw new WebError(
-    `${label} search aborted`,
+    `${label} aborted`,
     'WEB_ABORTED',
     cause === undefined ? undefined : { cause },
   )
+}
+
+export function abortSearch(label: string, cause?: unknown): never {
+  abortRequest(label, cause)
+}
+
+export function invalidFetchUrl(url: string, cause?: unknown): never {
+  throw new WebError(
+    `web fetch URL is invalid: ${url}`,
+    'WEB_INVALID_URL',
+    cause === undefined ? undefined : { cause },
+  )
+}
+
+export function requireHttpUrl(url: string): URL {
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch (error: unknown) {
+    invalidFetchUrl(url, error)
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    invalidFetchUrl(url)
+  }
+  return parsed
 }
 
 export function providerFailed(message: string, cause?: unknown): never {
