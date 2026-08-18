@@ -17,7 +17,7 @@
   },
   "files": [
     "lib",
-    "client",
+    "client/client.js",
     "cordis.patch.yml",
     "LICENSE",
     "README.md",
