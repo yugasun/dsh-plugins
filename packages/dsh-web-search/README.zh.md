@@ -26,6 +26,8 @@ dsh plugin --profile web add ./packages/dsh-web-search
 
 安装后请重启 `dsh web`。设置侧栏会出现 **网络搜索** 页。关闭 **自定义搜索** 则继续用 DSH 内置 `web_search` 和 `web_fetch`；开启后配置百度 / 豆包 / Tavily / Exa。
 
+![网络搜索设置界面](docs/settings.png)
+
 从 Git 子目录：
 
 ```sh

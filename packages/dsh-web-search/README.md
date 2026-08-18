@@ -26,6 +26,8 @@ dsh plugin --profile web add ./packages/dsh-web-search
 
 Restart `dsh web`. Settings has a **Web search** page. Turn **Custom search** off to keep DSH built-in `web_search` (`deepseek-official`) and `web_fetch` (`http`); turn it on to use Baidu / Doubao / Tavily / Exa.
 
+![Web search settings](docs/settings.png)
+
 From Git (subdirectory):
 
 ```sh
