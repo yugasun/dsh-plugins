@@ -25,7 +25,7 @@ packages/dsh-budget       @yugasun/dsh-budget
 packages/dsh-web-search   @yugasun/dsh-web-search
 ```
 
-Cordis plugin ids (`export const name`, settings namespaces, patch `id`) stay unscoped (`dsh-budget`, `dsh-web-search`) so existing `~/.dsh/settings.yaml` keys keep working. Only the **npm** name is scoped.
+Cordis plugin ids (`export const name`, settings namespaces, patch `id`) stay unscoped (`dsh-budget`, `dsh-web-search`) so existing `~/.dsh/settings.yaml` keys keep working. Only the **npm** name is scoped. The web client banner must register that same unscoped id with `window.__ModuleLoader__.load` — DSH keys the module table on the loader entry name, not the npm package name.
 
 Do not publish the repository root (`private: true`).
 
@@ -56,7 +56,7 @@ The tarball must contain `lib/index.js`, `client/client.js`, `cordis.patch.yml`,
 
 这是一个 pnpm monorepo：每个插件在 `packages/<name>`，以 `@yugasun/<name>` 独立发 npm。仓库根目录是 `private`，不要发布。
 
-Cordis 插件 id 和设置命名空间保持无 scope（`dsh-budget`、`dsh-web-search`），避免已有 `settings.yaml` 失效。
+Cordis 插件 id 和设置命名空间保持无 scope（`dsh-budget`、`dsh-web-search`），避免已有 `settings.yaml` 失效。Web 客户端 banner 必须用同一个无 scope id 调用 `window.__ModuleLoader__.load`，DSH 按 loader 条目名而不是 npm 包名注册。
 
 英文说明写在 `README.md`（npm 展示这份），中文写在 `README.zh.md`，改安装步骤或行为时请两边一起改。
 

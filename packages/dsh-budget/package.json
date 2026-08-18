@@ -1,7 +1,7 @@
 {
   "name": "@yugasun/dsh-budget",
   "version": "0.1.0",
-  "description": "Request-level token budget for DeepSeek Harness: cap tool results, plan each model request, and show before/after savings.",
+  "description": "Tool-output guard for DeepSeek Harness: cap oversized plain-text tool results, including read dumps official spill skips.",
   "license": "MIT",
   "author": "yugasun",
   "type": "module",

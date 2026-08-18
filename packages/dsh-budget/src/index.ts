@@ -2,12 +2,11 @@ import type { Context } from '@deepseek-ai/cordis'
 import { installSettingsSection, settingsNamespace } from '@deepseek-ai/dsh-settings'
 import { Config, SETTINGS_NS } from './config.ts'
 import { registerPostExecute } from './hooks/post-execute.ts'
-import { registerPreStep } from './hooks/pre-step.ts'
 import type { HostContext } from './host-types.ts'
 import { StatsStore } from './stats.ts'
 
 export const name = 'dsh-budget'
-export const inject = ['tools', 'settings']
+export const inject = ['tools']
 export { Config, SETTINGS_NS }
 export type { Config as BudgetConfig } from './config.ts'
 
@@ -28,7 +27,6 @@ export function apply(ctx: Context, config: Config): void {
   })
 
   registerPostExecute(host, source, stats)
-  registerPreStep(host, source, stats)
 
   host.inject(['webServer'], (serverCtx) => {
     const webServer = serverCtx.webServer
@@ -53,5 +51,5 @@ export function apply(ctx: Context, config: Config): void {
     )
   })
 
-  host.logger?.info?.('[dsh-budget] request budget plugin loaded')
+  host.logger?.info?.('[dsh-budget] tool-result cap plugin loaded')
 }

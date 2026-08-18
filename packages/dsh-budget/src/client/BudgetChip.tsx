@@ -37,18 +37,18 @@ export function BudgetChip(props: BudgetChipProps) {
   }, [open])
 
   const enabled = value?.enabled !== false
-  const cap = value?.maxInputTokens ?? 64_000
-  const used = stats.surfaceTokens || stats.lastPlan?.afterTokens || 0
-  const ratio = enabled ? Math.min(1, used / Math.max(cap, 1)) : 0
+  const cap = value?.toolResultMaxTokens ?? 4000
+  const trimmed = Boolean(stats.lastPlan && stats.lastPlan.savedTokens > 0)
+  const ratio = enabled && trimmed && stats.lastPlan
+    ? Math.min(1, stats.lastPlan.savedTokens / Math.max(stats.lastPlan.beforeTokens, 1))
+    : 0
   const dash = CIRCUMFERENCE * ratio
   const fillClass = !enabled
     ? 'dshBudgetChip-fill is-off'
-    : used > cap
+    : trimmed
       ? 'dshBudgetChip-fill is-saved'
-      : stats.lastPlan && stats.lastPlan.savedTokens > 0
-        ? 'dshBudgetChip-fill is-saved'
-        : 'dshBudgetChip-fill'
-  const figures = enabled ? `${formatTokens(used)} / ${formatTokens(cap)}` : props.t('chipOff')
+      : 'dshBudgetChip-fill'
+  const figures = enabled ? formatTokens(cap) : props.t('chipOff')
   const chipLabel = `${props.t('chipShort')} ${figures}`
 
   return h(

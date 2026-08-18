@@ -10,7 +10,6 @@ import {
 
 const caps = {
   enabled: true,
-  maxInputTokens: 64_000,
   toolResultMaxTokens: 256,
   failOpen: true,
 }
@@ -24,7 +23,7 @@ describe('acceptedPlainText', () => {
     expect(text).toBe('hello world')
   })
 
-  it('still reads nested Code Mode results (parent is not a reason to skip)', () => {
+  it('trims oversized read dumps that official spill would skip', () => {
     const dump = 'x'.repeat(2000)
     const text = acceptedPlainText({ kind: 'accept' }, [{ type: 'text', text: dump }])
     const trimmed = budgetAcceptedText(text!, caps, 'tool-result:read')
@@ -41,6 +40,16 @@ describe('acceptedPlainText', () => {
     expect(skipReason({ kind: 'accept', value: { lines: [] } }, [{ type: 'text', text: 'x' }])).toBe(
       'value-replacement',
     )
+  })
+
+  it('skips nested Code Mode results', () => {
+    expect(
+      skipReason(
+        { kind: 'accept' },
+        [{ type: 'text', text: 'x'.repeat(2000) }],
+        { name: 'bash', parent: { callId: '1' } },
+      ),
+    ).toBe('nested')
   })
 
   it('reads nested tool-result wrappers the session log uses', () => {
@@ -70,11 +79,14 @@ describe('StatsStore', () => {
     const trimmed = budgetAcceptedText('y'.repeat(4000), caps, 'tool-result:bash')
     expect(trimmed).toBeDefined()
     stats.record(trimmed!.plan)
+    stats.noteCaps(caps)
+    stats.notePost('trimmed')
     const snap = stats.snapshot()
     expect(snap.spillCount).toBe(1)
     expect(snap.savedTokens).toBe(trimmed!.plan.savedTokens)
     expect(snap.lastPlan).not.toBeNull()
-    expect(snap.postSeen).toBe(0)
-    expect(snap.caps).toBeNull()
+    expect(snap.postSeen).toBe(1)
+    expect(snap.postTrimmed).toBe(1)
+    expect(snap.caps?.toolResultMaxTokens).toBe(256)
   })
 })
