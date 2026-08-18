@@ -1,9 +1,7 @@
 import type { Config } from '../config.ts'
 import type { RequestPlan } from '../planner.ts'
 import { budgetToolText, budgetToolTextWithNotice } from '../tool-result.ts'
-import type { ContentBlock, PostToolDecision, SpillRef } from '../host-types.ts'
-
-const TEXTISH = new Set(['text', 'reasoning'])
+import type { ContentBlock, PostToolDecision, SpillRef, ToolExec } from '../host-types.ts'
 
 function asBlocks(value: unknown): ContentBlock[] | undefined {
   return Array.isArray(value) ? (value as ContentBlock[]) : undefined
@@ -26,20 +24,6 @@ export function flattenPlainText(content: ContentBlock[] | undefined): string | 
   return text
 }
 
-/** All model-visible text, including reasoning and tool-result wrappers. */
-export function flattenTextish(content: ContentBlock[] | undefined): string {
-  if (!content) return ''
-  let text = ''
-  for (const block of content) {
-    if (block.type === 'tool-result') {
-      text += flattenTextish(asBlocks(block.content))
-      continue
-    }
-    if (TEXTISH.has(block.type)) text += block.text ?? ''
-  }
-  return text
-}
-
 /** Official post-execute may replace `value` or `content`, never both. */
 export function isRewritableAccept(decision: PostToolDecision): boolean {
   return decision.kind === 'accept' && !Object.hasOwn(decision, 'value')
@@ -50,7 +34,12 @@ export function acceptedPlainText(decision: PostToolDecision, content: ContentBl
   return flattenPlainText(decision.content ?? content)
 }
 
-export function skipReason(decision: PostToolDecision, content: ContentBlock[] | undefined): string | undefined {
+export function skipReason(
+  decision: PostToolDecision,
+  content: ContentBlock[] | undefined,
+  exec?: ToolExec,
+): string | undefined {
+  if (exec?.parent !== undefined) return 'nested'
   if (decision.kind !== 'accept') return `decision:${decision.kind}`
   if (Object.hasOwn(decision, 'value')) return 'value-replacement'
   if (flattenPlainText(decision.content ?? content) === undefined) return 'non-text'

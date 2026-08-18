@@ -2,7 +2,7 @@ import { failOpen } from '../fail-open.ts'
 import type { Config } from '../config.ts'
 import type { StatsStore } from '../stats.ts'
 import type { HostContext, PostToolDecision, SpillStore, ToolExec, ToolResult } from '../host-types.ts'
-import { acceptedPlainText, budgetAcceptedText, flattenPlainText, skipReason } from './tool-content.ts'
+import { acceptedPlainText, budgetAcceptedText, skipReason } from './tool-content.ts'
 
 function ownerSessionId(exec: ToolExec): string | undefined {
   const id = exec.agent?.session?.header?.id
@@ -27,9 +27,15 @@ export function registerPostExecute(
       return failOpen(
         async () => {
           if (!config.enabled) return decision
+          // Nested Code Mode results are not model-facing; official spill-policy
+          // skips them for the same reason. `read` is intentionally trimmed.
+          if (exec.parent !== undefined) {
+            stats.notePost('skipped', 'nested')
+            return decision
+          }
           const text = acceptedPlainText(decision, result.content)
           if (text === undefined) {
-            stats.notePost('skipped', skipReason(decision, result.content) ?? 'unknown')
+            stats.notePost('skipped', skipReason(decision, result.content, exec) ?? 'unknown')
             return decision
           }
 
@@ -74,33 +80,6 @@ export function registerPostExecute(
         },
         decision,
         (error) => ctx.logger?.warn(`dsh-budget post-execute: ${String(error)}`),
-        config.failOpen,
-      )
-    }) as never,
-    { prepend: true },
-  )
-
-  // Code Mode logs inner tool results on a separate waterfall. Official
-  // spill-policy caps that copy at 50KB; our token cap is often tighter.
-  ctx.on(
-    'tools/code-dispatch-log',
-    (async (
-      dispatch: { name: string },
-      next: () => Promise<Array<{ type: string; text?: string }>>,
-    ) => {
-      const content = await next()
-      const config = source()
-      return failOpen(
-        async () => {
-          if (!config.enabled) return content
-          const text = flattenPlainText(content)
-          if (text === undefined) return content
-          const trimmed = budgetAcceptedText(text, config, `tool-result:${dispatch.name}`)
-          if (!trimmed) return content
-          return [{ type: 'text', text: trimmed.next }]
-        },
-        content,
-        (error) => ctx.logger?.warn(`dsh-budget code-dispatch-log: ${String(error)}`),
         config.failOpen,
       )
     }) as never,

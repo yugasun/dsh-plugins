@@ -97,25 +97,12 @@ export function BudgetCard(props: BudgetCardProps) {
       }),
     ),
     h(
-      Setting,
-      { label: props.t('maxInput'), hint: props.t('maxInputHint') },
-      h(NumberField, {
-        value: value.maxInputTokens,
-        min: 1024,
-        disabled,
-        unit: props.t('unitTokens'),
-        aside: chars(value.maxInputTokens),
-        onChange: (next) => void props.scope.set('maxInputTokens', next),
-      }),
-    ),
-    h(
       'section',
       { className: 'dshBudgetStatus' },
       h('div', { className: 'dshBudgetStatus-title' }, props.t('statusTitle')),
       h(
         'div',
         { className: 'dshBudgetStatus-meta' },
-        h('span', null, `${props.t('surface')} ${formatTokens(stats.surfaceTokens)} / ${formatTokens(value.maxInputTokens)}`),
         h('span', null, `${props.t('saved')} ${formatTokens(stats.savedTokens)}`),
         h('span', null, `${props.t('spills')} ${stats.spillCount}`),
       ),
@@ -126,32 +113,13 @@ export function BudgetCard(props: BudgetCardProps) {
             h('div', { className: 'dshBudgetStatus-title' }, props.t('lastPlan')),
             h(MeterBars, { before: plan.beforeTokens, after: plan.afterTokens, t: props.t }),
           )
-        : h(
-            'p',
-            { className: 'dshBudgetStatus-empty' },
-            stats.lastError
-              ? props.t('rewriteFailed', { error: stats.lastError })
-              : stats.surfaceTokens > value.maxInputTokens
-                ? props.t('overCap', {
-                    used: formatTokens(stats.surfaceTokens),
-                    cap: formatTokens(value.maxInputTokens),
-                  })
-                : stats.surfaceTokens > 0
-                  ? props.t('underCap', {
-                      used: formatTokens(stats.surfaceTokens),
-                      cap: formatTokens(value.maxInputTokens),
-                    })
-                  : props.t('empty'),
-          ),
-      stats.caps
-        && (stats.caps.toolResultMaxTokens !== value.toolResultMaxTokens
-          || stats.caps.maxInputTokens !== value.maxInputTokens)
+        : h('p', { className: 'dshBudgetStatus-empty' }, props.t('empty')),
+      stats.caps && stats.caps.toolResultMaxTokens !== value.toolResultMaxTokens
         ? h(
             'p',
             { className: 'dshBudgetStatus-empty' },
             props.t('hostCaps', {
               tool: formatTokens(stats.caps.toolResultMaxTokens),
-              cap: formatTokens(stats.caps.maxInputTokens),
             }),
           )
         : null,

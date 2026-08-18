@@ -6,7 +6,6 @@ import { shrinkToTokens } from '../src/text.ts'
 
 const caps = {
   enabled: true,
-  maxInputTokens: 1000,
   toolResultMaxTokens: 200,
 }
 
@@ -14,24 +13,16 @@ function tool(tokens: number, key = 'tool-result:bash'): Contributor {
   return { key, tokens, lifetime: 'step', kind: 'tool-result' }
 }
 
-function history(tokens: number, key = 'history:0'): Contributor {
-  return { key, tokens, lifetime: 'turn', kind: 'history' }
-}
-
-function system(tokens: number): Contributor {
-  return { key: 'system', tokens, lifetime: 'profile', kind: 'system', required: true }
-}
-
 describe('planRequest', () => {
   it('returns identity when disabled', () => {
-    const plan = planRequest([tool(8000), history(100)], { ...caps, enabled: false })
+    const plan = planRequest([tool(8000)], { ...caps, enabled: false })
     expect(plan.contributors.every((item) => item.action === 'keep')).toBe(true)
     expect(plan.savedTokens).toBe(0)
     expect(plan.afterTokens).toBe(plan.beforeTokens)
   })
 
-  it('keeps contributors under both caps', () => {
-    const plan = planRequest([system(100), history(50), tool(80)], caps)
+  it('keeps tool results under the per-result cap', () => {
+    const plan = planRequest([tool(80)], caps)
     expect(plan.contributors.every((item) => item.action === 'keep')).toBe(true)
     expect(plan.savedTokens).toBe(0)
   })
@@ -43,29 +34,14 @@ describe('planRequest', () => {
     expect(plan.savedTokens).toBe(600)
   })
 
-  it('cuts tool results before history when the total budget is exceeded', () => {
+  it('leaves non-tool-result contributors alone', () => {
     const plan = planRequest(
-      [system(100), tool(180), history(900)],
-      { enabled: true, maxInputTokens: 400, toolResultMaxTokens: 500 },
+      [{ key: 'history:0', tokens: 9000, lifetime: 'step' }, tool(80)],
+      caps,
     )
-    const toolItem = plan.contributors.find((item) => item.kind === 'tool-result')
-    const historyItem = plan.contributors.find((item) => item.kind === 'history')
-    const systemItem = plan.contributors.find((item) => item.required)
-    expect(toolItem?.afterTokens).toBeLessThan(180)
-    expect(historyItem?.action).toBe('summarize')
-    expect(systemItem?.action).toBe('keep')
-    expect(systemItem?.afterTokens).toBe(100)
-    expect(plan.afterTokens).toBeLessThanOrEqual(400)
-  })
-
-  it('never drops a required system contributor', () => {
-    const plan = planRequest(
-      [system(300), history(300)],
-      { enabled: true, maxInputTokens: 200, toolResultMaxTokens: 50 },
-    )
-    const systemItem = plan.contributors.find((item) => item.required)
-    expect(systemItem?.action).toBe('keep')
-    expect(systemItem?.afterTokens).toBe(300)
+    const history = plan.contributors.find((item) => item.key === 'history:0')
+    expect(history?.action).toBe('keep')
+    expect(history?.afterTokens).toBe(9000)
   })
 })
 

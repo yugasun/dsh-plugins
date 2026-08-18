@@ -1,6 +1,5 @@
 export interface ClientConfig {
   enabled: boolean
-  maxInputTokens: number
   toolResultMaxTokens: number
   failOpen: boolean
 }
@@ -15,17 +14,11 @@ export interface ClientStats {
   lastPlan: ClientPlan | null
   savedTokens: number
   spillCount: number
-  summarizeCount: number
-  surfaceTokens: number
-  shrinkableTokens?: number
-  caps?: { enabled: boolean; maxInputTokens: number; toolResultMaxTokens: number } | null
+  caps?: { enabled: boolean; toolResultMaxTokens: number } | null
   postSeen?: number
   postTrimmed?: number
   postSkipped?: number
   lastSkip?: string | null
-  pruneAttempts?: number
-  pruneLanded?: number
-  lastError?: string | null
   updatedAt: number | null
 }
 
@@ -39,8 +32,6 @@ export const EMPTY_STATS: ClientStats = {
   lastPlan: null,
   savedTokens: 0,
   spillCount: 0,
-  summarizeCount: 0,
-  surfaceTokens: 0,
   updatedAt: null,
 }
 

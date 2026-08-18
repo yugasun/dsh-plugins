@@ -15,7 +15,7 @@
 | [dsh-budget](packages/dsh-budget) | [@yugasun/dsh-budget](https://www.npmjs.com/package/@yugasun/dsh-budget) | `dsh plugin --profile web add @yugasun/dsh-budget` |
 | [dsh-web-search](packages/dsh-web-search) | [@yugasun/dsh-web-search](https://www.npmjs.com/package/@yugasun/dsh-web-search) | `dsh plugin --profile web add @yugasun/dsh-web-search` |
 
-- **dsh-budget** — 请求级 token 预算：限制工具结果、规划每次请求、对话里显示预算圆环和 before/after
+- **dsh-budget** — 工具输出上限：截过长的纯文本工具结果（包括官方 spill 会跳过的 `read`）
 - **dsh-web-search** — 多后端网页搜索：百度、豆包、Tavily、Exa，注册进 `ctx.web`
 
 安装插件会在 Harness 进程内以你的权限运行第三方代码。安装前请阅读源码。

@@ -15,7 +15,7 @@ Compatible with DeepSeek Harness **0.1.0-rc.7**.
 | [dsh-budget](packages/dsh-budget) | [@yugasun/dsh-budget](https://www.npmjs.com/package/@yugasun/dsh-budget) | `dsh plugin --profile web add @yugasun/dsh-budget` |
 | [dsh-web-search](packages/dsh-web-search) | [@yugasun/dsh-web-search](https://www.npmjs.com/package/@yugasun/dsh-web-search) | `dsh plugin --profile web add @yugasun/dsh-web-search` |
 
-- **dsh-budget** — request-level token budget: cap tool results, plan each request, show a composer ring and before/after
+- **dsh-budget** — tool-output guard: cap oversized plain-text tool results (including `read`)
 - **dsh-web-search** — multi-provider web search for `ctx.web`: Baidu, Doubao, Tavily, Exa
 
 Installing a plugin runs third-party code in the harness process with your permissions. Review the source before you install.

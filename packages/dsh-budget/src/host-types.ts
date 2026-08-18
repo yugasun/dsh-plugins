@@ -1,8 +1,3 @@
-export interface TextBlock {
-  type: 'text'
-  text: string
-}
-
 export interface ContentBlock {
   type: string
   text?: string
@@ -12,13 +7,7 @@ export interface ContentBlock {
 export interface UserMessage {
   role?: string
   content: ContentBlock[]
-  source?: {
-    kind?: string
-    plugin?: string
-    form?: string
-    summary?: string
-  }
-  id?: string
+  additionalContexts?: UserMessage[]
 }
 
 export interface ToolResult {
@@ -43,46 +32,7 @@ export interface ToolExec {
     session?: {
       header?: { id?: string }
     }
-    inject?: (message: UserMessage) => void
   }
-}
-
-export interface TokenMeasurement {
-  surfaceTokens?: number
-  totalTokens?: number
-}
-
-export interface TokenMeter {
-  measure(session: unknown): TokenMeasurement
-  estimateMessage?(message: unknown): number
-}
-
-export interface SessionSurface {
-  nodes: readonly number[]
-}
-
-export interface SessionEventLike {
-  type: string
-  seq?: number
-  data?: {
-    message?: {
-      content?: Array<{
-        type?: string
-        content?: ContentBlock[]
-        text?: string
-        toolCallId?: string
-        isError?: boolean
-      }>
-      [key: string]: unknown
-    }
-    [key: string]: unknown
-  }
-}
-
-export interface SessionLike {
-  events: readonly SessionEventLike[]
-  surface?: SessionSurface
-  append(type: string, data: unknown, opts?: unknown): { seq: number }
 }
 
 export interface SpillRef {

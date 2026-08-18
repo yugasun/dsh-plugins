@@ -2,7 +2,7 @@
 
 [![npm](https://img.shields.io/npm/v/@yugasun/dsh-budget.svg)](https://www.npmjs.com/package/@yugasun/dsh-budget)
 
-给 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的**请求级 token 预算**。它不替代官方 compaction，也不再做一个 context 仪表盘——它**限制每次模型请求真正带上的内容**。
+给 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的**工具输出上限**。它只截过长的**纯文本工具结果**（包括官方 spill 会跳过的 `read`），总上下文仍交给官方 compaction。
 
 兼容 DeepSeek Harness **0.1.0-rc.7**。
 
@@ -24,7 +24,7 @@ dsh plugin --profile web add @yugasun/dsh-budget
 dsh plugin --profile web add ./packages/dsh-budget
 ```
 
-安装后请重启 `dsh web`。然后打开侧栏 **设置 → 请求预算**。对话输入栏也会出现带「预算」文字的按钮。关闭开关立即生效，不用再重启。
+安装后请重启 `dsh web`。然后打开侧栏 **设置 → 工具输出**。对话输入栏也会出现带「输出」文字的按钮。设置页上的开关和数字对下一条工具结果立即生效；用手改 `~/.dsh/settings.yaml` 仍需重启。
 
 从 Git 子目录：
 
@@ -40,13 +40,16 @@ dsh plugin --profile web remove @yugasun/dsh-budget
 
 ## 做什么
 
-设置页只留三件用户要管的事：
+设置页只留两件用户要管的事：
 
 - **启用**：需要完整日志时关掉
 - **单条工具结果上限**（默认 4000）：一条过长的 bash / 读文件输出只留头尾
-- **单次请求上限**（默认 64000）：整步还超了，再压工具结果，必要时压本步历史
 
-失败一律放行，不在界面上暴露——关了会把 agent 卡死。系统提示不会删。
+它**不管**整次请求有多大。官方 compaction 仍按模型窗口的 80% 触发。官方 spill 仍会跳过 `read` 和嵌套 `exec.parent`；本插件会截 `read`，嵌套 exec 同样跳过。
+
+`~/.dsh/settings.yaml` 里如果还留着 `maxInputTokens`，会被忽略。
+
+失败一律放行，不在界面上暴露。
 
 ## 示例任务
 
@@ -54,7 +57,7 @@ dsh plugin --profile web remove @yugasun/dsh-budget
 
 ### 1. 三十秒看到裁切
 
-**设置 → 请求预算** 把 **单条工具结果上限** 改成 `256`，然后发：
+**设置 → 工具输出** 把 **单条工具结果上限** 改成 `256`，然后发：
 
 ```
 把 README.md 全文贴回来，不要摘要。
@@ -64,9 +67,9 @@ dsh plugin --profile web remove @yugasun/dsh-budget
 
 - 工具结果是**头尾预览**，不是整份文件
 - 类似 `dsh-budget: omitted ~N tokens. Full result stored at: …`
-- 输入栏 **预算** 数字会变；设置页「本会话效果」会显示少带了多少
+- 输入栏 **输出** 会变绿；设置页「本会话效果」会显示少带了多少
 
-关掉 **启用请求预算**，再发同一句，工具结果应恢复全文。验证完请重新打开，并把上限改回 `4000`。
+关掉 **启用工具输出上限**，再发同一句，工具结果应恢复全文。验证完请重新打开，并把上限改回 `4000`。
 
 ### 2. 默认上限，接近真实日志
 
@@ -78,11 +81,7 @@ dsh plugin --profile web remove @yugasun/dsh-budget
 然后 cat 整个文件，告诉我编译有没有成功，并引用最后一行。
 ```
 
-`cat` / `read` 的结果应停在大约 4,000 token（约 1.6 万字符），而不是整份约 64 万字符的日志——这一条就能少带大约 **90%**。模型仍能靠头尾预览和 spill 位置回答。
-
-### 3. 确认是请求级，不是 compaction
-
-预算开着时往上翻对话：已经显示过的消息不会被改写。变小的是**下一次**发给模型的请求。设置页「最近一次发给模型的量」就是这一次的 before / after。
+`cat` / `read` 的结果应停在大约 4,000 token（约 1.6 万字符），而不是整份日志。
 
 ## 开发
 
