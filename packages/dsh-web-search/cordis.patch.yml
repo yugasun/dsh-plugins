@@ -1,0 +1,16 @@
+# dsh-web-search — bundle patch layer.
+# Installing this package (`dsh plugin --profile web add @yugasun/dsh-web-search`) appends
+# it to the profile's bundle stack. The web client half is discovered from
+# package.json `dsh.client` and does not need its own patch row.
+#
+# A later patch replaces a targeted row's whole `config`. The base layer pins
+# official web_search to `deepseek-official`; retarget it at this plugin's
+# facade so custom backends can run. The settings toggle `customSearch` retargets
+# `ctx.web.searchProviderId` at runtime (`dsh-web-search` vs `deepseek-official`).
+- id: web
+  config:
+    searchProvider: dsh-web-search
+
+- insert:
+    - id: dsh-web-search
+      name: dsh-web-search

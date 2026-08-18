@@ -1,0 +1,16 @@
+node_modules
+lib
+**/client/*.js
+**/client/*.map
+*.tgz
+*.log
+*.tsbuildinfo
+.DS_Store
+.pnpm-store
+coverage
+.env
+.env.*
+!.env.example
+.idea
+.vscode/*
+!.vscode/extensions.json
