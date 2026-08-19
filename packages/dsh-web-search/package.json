@@ -1,6 +1,6 @@
 {
   "name": "@yugasun/dsh-web-search",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Multi-provider web search for DeepSeek Harness: Baidu, Doubao, Tavily, and Exa backends for ctx.web.",
   "license": "MIT",
   "author": "yugasun",
