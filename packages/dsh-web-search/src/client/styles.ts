@@ -1,4 +1,4 @@
-const TAG_ID = 'dsh-web-search/web-ui.css'
+const TAG_ID = 'dsh-web-search/web-ui.v2.css'
 
 const CSS = `
 .dshWebSearchPage {
@@ -25,6 +25,96 @@ const CSS = `
   gap: 4px;
   padding-top: 4px;
 }
+.dshWebSearchSummary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  padding: 12px 14px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 12px;
+  background: var(--dsw-alias-bg-layer-3, transparent);
+}
+.dshWebSearchSummary-item,
+.dshWebSearchSummary-end {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.dshWebSearchSummary-item {
+  flex: 1 1 9em;
+}
+.dshWebSearchSummary-end {
+  margin-left: auto;
+  align-items: flex-end;
+  flex: none;
+}
+.dshWebSearchSummary-k {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--dsw-alias-label-tertiary);
+}
+.dshWebSearchSummary-v {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--dsw-alias-label-primary);
+}
+.dshWebSearchSummary-hint {
+  padding: 8px 0 4px;
+}
+.dshWebSearchSwitch {
+  position: relative;
+  width: 40px;
+  height: 24px;
+  display: inline-flex;
+  cursor: pointer;
+}
+.dshWebSearchSwitch.is-off {
+  cursor: default;
+}
+.dshWebSearchSwitch input {
+  appearance: none;
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: inherit;
+  z-index: 1;
+}
+.dshWebSearchSwitch-track {
+  width: 40px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--dsw-alias-interactive-bg-hover, color-mix(in srgb, currentColor 12%, transparent));
+  border: 1px solid var(--dsw-alias-border-l3, color-mix(in srgb, currentColor 18%, transparent));
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  transition: background .16s, border-color .16s;
+}
+.dshWebSearchSwitch.is-on .dshWebSearchSwitch-track {
+  background: var(--dsw-static-blue-450, #4d7cff);
+  border-color: transparent;
+}
+.dshWebSearchSwitch-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px color-mix(in srgb, #000 20%, transparent);
+  transform: translateX(0);
+  transition: transform .16s;
+}
+.dshWebSearchSwitch.is-on .dshWebSearchSwitch-thumb {
+  transform: translateX(16px);
+}
+.dshWebSearchSwitch input:focus-visible + .dshWebSearchSwitch-track {
+  outline: 2px solid var(--dsw-alias-brand-primary, var(--dsw-static-blue-450));
+  outline-offset: 2px;
+}
 .dshWebSearchField {
   display: flex;
   flex-direction: column;
@@ -33,9 +123,9 @@ const CSS = `
 }
 .dshWebSearchField + .dshWebSearchField,
 .dshWebSearchField + .dshWebSearchNote,
-.dshWebSearchField + .dshWebSearchList,
+.dshWebSearchField + .dshWebSearchKeys,
 .dshWebSearchNote + .dshWebSearchHint,
-.dshWebSearchList + .dshWebSearchHint {
+.dshWebSearchList + .dshWebSearchMore {
   border-top: 1px solid var(--dsw-alias-border-l2);
 }
 .dshWebSearchField-label {
@@ -55,8 +145,9 @@ const CSS = `
   width: 100%;
   max-width: 28em;
   box-sizing: border-box;
-  padding: 5px 8px;
-  border-radius: 6px;
+  padding: 7px 10px;
+  min-height: 32px;
+  border-radius: 8px;
   border: 1px solid var(--dsw-alias-border-l3, color-mix(in srgb, currentColor 18%, transparent));
   background: transparent;
   color: inherit;
@@ -65,68 +156,47 @@ const CSS = `
   outline: 2px solid var(--dsw-alias-brand-primary, var(--dsw-static-blue-450));
   outline-offset: 1px;
 }
-.dshWebSearchToggle {
-  align-items: center;
-  gap: 8px;
-  display: inline-flex;
-  font-size: 13px;
-  cursor: pointer;
-  color: var(--dsw-alias-label-primary);
-}
-.dshWebSearchToggle input:disabled + span {
-  color: var(--dsw-alias-label-tertiary);
-}
-.dshWebSearchTabs {
-  border-bottom: 1px solid var(--dsw-alias-border-l2);
-  align-items: flex-end;
-  gap: 22px;
+.dshWebSearchSeg {
   display: flex;
   flex-wrap: wrap;
-  margin-top: 2px;
+  gap: 6px;
 }
-.dshWebSearchTabs-item {
+.dshWebSearchSeg-item {
   appearance: none;
   margin: 0;
-  color: var(--dsw-alias-label-tertiary);
   font: inherit;
   cursor: pointer;
-  background: 0 0;
-  border: 0;
-  padding: 7px 1px 9px;
+  color: var(--dsw-alias-label-secondary);
+  background: var(--dsw-alias-interactive-bg-hover, color-mix(in srgb, currentColor 8%, transparent));
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 6px 12px;
+  min-height: 32px;
   font-size: 13px;
   line-height: 20px;
-  position: relative;
 }
-.dshWebSearchTabs-item:hover,
-.dshWebSearchTabs-item.is-on {
+.dshWebSearchSeg-item:hover {
   color: var(--dsw-alias-label-primary);
 }
-.dshWebSearchTabs-item.is-on:after,
-.dshWebSearchTabs-item:focus-visible:after {
-  background: var(--dsw-alias-label-primary);
-  content: "";
-  border-radius: 2px 2px 0 0;
-  height: 2px;
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  right: 0;
+.dshWebSearchSeg-item.is-on {
+  color: var(--dsw-static-blue-450, currentColor);
+  background: color-mix(in srgb, var(--dsw-static-blue-450, currentColor) 14%, transparent);
+  border-color: color-mix(in srgb, var(--dsw-static-blue-450, currentColor) 35%, transparent);
+  font-weight: 600;
 }
-.dshWebSearchTabs-item:focus-visible {
+.dshWebSearchSeg-item:focus-visible {
   outline: 2px solid var(--dsw-alias-state-business-primary, var(--dsw-static-blue-450));
   outline-offset: 2px;
-  color: var(--dsw-alias-label-primary);
-  border-radius: 2px;
 }
-.dshWebSearchTabs-item:disabled {
+.dshWebSearchSeg-item:disabled {
   cursor: default;
   opacity: 0.45;
 }
-.dshWebSearchActive {
-  margin: 0;
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--dsw-alias-label-tertiary);
+.dshWebSearchKeys {
+  padding: 16px 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dsw-alias-label-primary);
 }
 .dshWebSearchNote {
   margin: 0;
@@ -139,7 +209,7 @@ const CSS = `
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 12px 0;
+  padding: 8px 0 12px;
 }
 .dshWebSearchCard {
   border: 1px solid var(--dsw-alias-border-l2);
@@ -172,6 +242,7 @@ const CSS = `
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
+  min-height: 44px;
   display: flex;
 }
 .dshWebSearchCard-head:focus-visible {
@@ -195,6 +266,13 @@ const CSS = `
   color: var(--dsw-alias-label-tertiary);
   font-size: 13px;
   line-height: 1.5;
+}
+.dshWebSearchCard-note {
+  margin: 0;
+  padding: 0 0 4px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--dsw-alias-label-tertiary);
 }
 .dshWebSearchCard-badge {
   white-space: nowrap;
@@ -266,11 +344,15 @@ const CSS = `
   gap: 10px;
   padding-top: 12px;
 }
-.dshWebSearchDetails > summary {
+.dshWebSearchDetails > summary,
+.dshWebSearchMore > summary {
   cursor: pointer;
   font-size: 12px;
   font-weight: 500;
   color: var(--dsw-alias-label-secondary);
+}
+.dshWebSearchMore {
+  padding: 12px 0 0;
 }
 .dshWebSearchStatus-empty {
   margin: 0;
@@ -279,29 +361,36 @@ const CSS = `
   color: var(--dsw-alias-label-tertiary);
 }
 .dshWebSearchHint {
-  margin: 0;
-  padding: 12px 0 0;
+  margin: 8px 0 0;
   font-size: 12px;
   line-height: 1.5;
   color: var(--dsw-alias-label-tertiary);
 }
 .dshWebSearchProbe {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
   padding-top: 12px;
   margin-top: 12px;
   border-top: 1px solid var(--dsw-alias-border-l2);
 }
 .dshWebSearchProbe-btn {
   font: inherit;
-  width: fit-content;
   cursor: pointer;
-  padding: 5px 10px;
-  border-radius: 6px;
+  padding: 6px 12px;
+  min-height: 32px;
+  border-radius: 8px;
   border: 1px solid var(--dsw-alias-border-l3, color-mix(in srgb, currentColor 18%, transparent));
   background: transparent;
   color: inherit;
+}
+.dshWebSearchProbe-btn:hover:not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-hover, color-mix(in srgb, currentColor 8%, transparent));
+}
+.dshWebSearchProbe-btn:focus-visible {
+  outline: 2px solid var(--dsw-alias-brand-primary, var(--dsw-static-blue-450));
+  outline-offset: 1px;
 }
 .dshWebSearchProbe-btn:disabled {
   cursor: default;
@@ -309,6 +398,7 @@ const CSS = `
 }
 .dshWebSearchProbe-msg {
   margin: 0;
+  flex: 1 1 12em;
   font-size: 12px;
   line-height: 1.5;
   color: var(--dsw-alias-label-secondary);
@@ -317,20 +407,28 @@ const CSS = `
   color: var(--dsw-static-green-450, #34d399);
 }
 .dshWebSearchProbe-msg.is-bad {
-  color: var(--dsw-alias-label-tertiary);
+  color: var(--dsw-static-red-450, #f87171);
+}
+@media (prefers-reduced-motion: reduce) {
+  .dshWebSearchSwitch-track,
+  .dshWebSearchSwitch-thumb,
+  .dshWebSearchCard,
+  .dshWebSearchCard-chevron {
+    transition: none;
+  }
 }
 `
 
 export function ensureSearchStyles(): () => void {
   if (typeof document === 'undefined') return () => undefined
-  const existing = document.querySelector(`style[data-plugin-css=${JSON.stringify(TAG_ID)}]`)
-  if (existing) {
-    return () => existing.remove()
+  const selector = `style[data-plugin-css=${JSON.stringify(TAG_ID)}]`
+  let tag = document.querySelector(selector) as HTMLStyleElement | null
+  if (!tag) {
+    tag = document.createElement('style')
+    tag.dataset.plugin = 'dsh-web-search'
+    tag.dataset.pluginCss = TAG_ID
+    document.head.appendChild(tag)
   }
-  const tag = document.createElement('style')
-  tag.dataset.plugin = 'dsh-web-search'
-  tag.dataset.pluginCss = TAG_ID
   tag.textContent = CSS
-  document.head.appendChild(tag)
   return () => tag.remove()
 }
