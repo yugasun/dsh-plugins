@@ -15,22 +15,20 @@ if (!fs.existsSync(source)) {
 }
 
 /**
- * DSH's client module table keys on the Cordis loader entry name
- * (`export const name`), not the npm package name. Official packages
- * happen to use the same string for both; this repo keeps an unscoped
- * Cordis id so settings.yaml keys stay stable after the npm scope.
+ * DSH keys the client module table on the Cordis loader entry `name`
+ * (the npm specifier in cordis.patch.yml), which must match package.json
+ * `name`. Keep `export const name` / patch `id` unscoped for settings.yaml.
  */
-function cordisPluginName() {
-  const src = fs.readFileSync(path.join(root, 'src/index.ts'), 'utf8')
-  const match = src.match(/export const name = ['"]([^'"]+)['"]/)
-  if (!match) {
-    console.error('normalize-client-banner: src/index.ts is missing export const name')
+function loaderEntryName() {
+  const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'))
+  if (typeof pkg.name !== 'string' || pkg.name.length === 0) {
+    console.error('normalize-client-banner: package.json is missing name')
     process.exit(1)
   }
-  return match[1]
+  return pkg.name
 }
 
-const idJson = JSON.stringify(cordisPluginName())
+const idJson = JSON.stringify(loaderEntryName())
 let body = fs.readFileSync(source, 'utf8')
 body = body.replaceAll('sourceMappingURL=client.cjs.map', 'sourceMappingURL=client.js.map')
 

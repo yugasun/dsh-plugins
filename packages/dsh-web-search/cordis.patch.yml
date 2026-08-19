@@ -3,6 +3,9 @@
 # it to the profile's bundle stack. The web client half is discovered from
 # package.json `dsh.client` and does not need its own patch row.
 #
+# `id` is the Cordis fiber / settings identity (unscoped). `name` is the npm
+# specifier Cordis actually imports — it must match package.json "name".
+#
 # A later patch replaces a targeted row's whole `config`. The base layer pins
 # official web_search to `deepseek-official`; retarget it at this plugin's
 # facade so custom backends can run. The settings toggle `customSearch` retargets
@@ -13,4 +16,4 @@
 
 - insert:
     - id: dsh-web-search
-      name: dsh-web-search
+      name: '@yugasun/dsh-web-search'

@@ -18,9 +18,10 @@
 dsh plugin --profile web add @yugasun/dsh-web-search
 ```
 
-从本仓库本地路径：
+从本仓库本地路径（`dsh plugin add` 会 `link` 到源码，Node 从源码目录解析 `@deepseek-ai/*`。必须先在仓库根目录执行 `pnpm install`，让 `packages/dsh-web-search/node_modules` 里有这些 peer）：
 
 ```sh
+pnpm install
 dsh plugin --profile web add ./packages/dsh-web-search
 ```
 

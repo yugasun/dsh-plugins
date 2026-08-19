@@ -29,7 +29,7 @@ pnpm typecheck
 pnpm build
 ```
 
-把本地仓库装进 web profile：
+把本地仓库装进 web profile（先 `pnpm install`，否则 `link:` 到源码后解析不到 `@deepseek-ai/dsh-settings` 等 host 包）：
 
 ```sh
 dsh plugin --profile web add "$PWD/packages/dsh-web-search"

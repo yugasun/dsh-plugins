@@ -18,9 +18,10 @@ From npm:
 dsh plugin --profile web add @yugasun/dsh-web-search
 ```
 
-From a clone of this monorepo:
+From a clone of this monorepo (`dsh plugin add` `link`s the source tree, so Node resolves `@deepseek-ai/*` from this package. Run `pnpm install` at the repo root first so those peers exist under `packages/dsh-web-search/node_modules`):
 
 ```sh
+pnpm install
 dsh plugin --profile web add ./packages/dsh-web-search
 ```
 
