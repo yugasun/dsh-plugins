@@ -1,6 +1,6 @@
 import { createElement as h, useRef, useState, type ReactNode } from 'react'
-import type { ClientConfig, ProviderId, SearchProviderChoice, SettingsScope } from './model.ts'
-import { PROVIDER_OPTIONS } from './model.ts'
+import type { ClientConfig, FetchProviderChoice, ProbeResult, ProviderId, SearchProviderChoice, SettingsScope } from './model.ts'
+import { FETCH_OPTIONS, PROVIDER_OPTIONS } from './model.ts'
 import { secretCommit, secretDisplay } from './secret-field.ts'
 import { useSearchStatus } from './useSearchStatus.ts'
 import { useSettingsScope } from './useSettingsScope.ts'
@@ -133,6 +133,74 @@ function Tabs(props: {
   )
 }
 
+function ProbeButton(props: {
+  id: ProviderId
+  configured: boolean
+  disabled: boolean
+  t: (key: string) => string
+}) {
+  const [busy, setBusy] = useState(false)
+  const [result, setResult] = useState<ProbeResult | 'need-key' | null>(null)
+
+  const run = () => {
+    if (!props.configured) {
+      setResult('need-key')
+      return
+    }
+    setBusy(true)
+    setResult(null)
+    void fetch('/dsh-web-search/probe', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ provider: props.id }),
+    })
+      .then(async (response) => {
+        const body = await response.json() as ProbeResult
+        setResult(body)
+      })
+      .catch((error: unknown) => {
+        setResult({
+          ok: false,
+          provider: props.id,
+          error: error instanceof Error ? error.message : String(error),
+        })
+      })
+      .finally(() => setBusy(false))
+  }
+
+  const message = result === 'need-key'
+    ? props.t('testNeedKey')
+    : result == null
+      ? null
+      : result.ok
+        ? `${props.t('testOk')} · ${result.sources ?? 0}`
+        : `${props.t('testFail')}: ${result.error ?? result.code ?? ''}`
+
+  return h(
+    'div',
+    { className: 'dshWebSearchProbe' },
+    h(
+      'button',
+      {
+        type: 'button',
+        className: 'dshWebSearchProbe-btn',
+        disabled: props.disabled || busy,
+        onClick: run,
+      },
+      busy ? props.t('testing') : props.t('testConnection'),
+    ),
+    message
+      ? h(
+        'p',
+        {
+          className: `dshWebSearchProbe-msg${result !== 'need-key' && result?.ok ? ' is-ok' : ' is-bad'}`,
+        },
+        message,
+      )
+      : null,
+  )
+}
+
 function ProviderCard(props: {
   title: string
   description: string
@@ -248,6 +316,27 @@ export function SearchCard(props: SearchCardProps) {
               ),
             ],
           }),
+          h(Field, {
+            key: 'fetch',
+            label: props.t('fetch'),
+            hint: props.t('fetchHint'),
+            children: [
+              h(Tabs, {
+                key: 'fetch-tabs',
+                value: value.fetchProvider ?? 'auto',
+                disabled,
+                options: FETCH_OPTIONS.map((option) => ({ id: option.id, label: props.t(option.labelKey) })),
+                onChange: (next) => set('fetchProvider', next as FetchProviderChoice),
+              }),
+              h(
+                'p',
+                { key: 'fetch-active', className: 'dshWebSearchActive' },
+                status.activeFetch
+                  ? `${props.t('activeNow')} · ${props.t(status.activeFetch)}`
+                  : props.t('fetchHttp'),
+              ),
+            ],
+          }),
           h(
             'div',
             { key: 'list', className: 'dshWebSearchList' },
@@ -291,6 +380,13 @@ export function SearchCard(props: SearchCardProps) {
                     onChange: (next) => set('baiduBaseURL', next),
                   }),
                 ),
+                h(ProbeButton, {
+                  key: 'baidu-probe',
+                  id: 'baidu',
+                  configured: configured('baidu'),
+                  disabled,
+                  t: props.t,
+                }),
               ],
             }),
             h(ProviderCard, {
@@ -333,6 +429,13 @@ export function SearchCard(props: SearchCardProps) {
                     onChange: (next) => set('doubaoBaseURL', next),
                   }),
                 ),
+                h(ProbeButton, {
+                  key: 'doubao-probe',
+                  id: 'doubao',
+                  configured: configured('doubao'),
+                  disabled,
+                  t: props.t,
+                }),
               ],
             }),
             h(ProviderCard, {
@@ -395,6 +498,13 @@ export function SearchCard(props: SearchCardProps) {
                     onChange: (next) => set('tavilyBaseURL', next),
                   }),
                 ),
+                h(ProbeButton, {
+                  key: 'tavily-probe',
+                  id: 'tavily',
+                  configured: configured('tavily'),
+                  disabled,
+                  t: props.t,
+                }),
               ],
             }),
             h(ProviderCard, {
@@ -451,6 +561,13 @@ export function SearchCard(props: SearchCardProps) {
                     }),
                   }),
                 ),
+                h(ProbeButton, {
+                  key: 'exa-probe',
+                  id: 'exa',
+                  configured: configured('exa'),
+                  disabled,
+                  t: props.t,
+                }),
               ],
             }),
           ),

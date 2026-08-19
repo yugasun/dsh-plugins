@@ -1,5 +1,6 @@
 import type { WebSearchProvider, WebSearchRequest, WebSearchResult, WebSearchSource } from '@deepseek-ai/dsh-web'
 import { firstNonEmpty, toIsoDate } from './errors.ts'
+import { extractHttpUrls, hitResultCap } from './urls.ts'
 import { postJson } from './http.ts'
 import { isSelected, type ResolvedSecrets } from './select.ts'
 import type { Config } from './config.ts'
@@ -51,16 +52,23 @@ export function mapBaiduReference(ref: BaiduReference): WebSearchSource | undefi
   }
 }
 
-export function mapBaiduResponse(response: BaiduSearchResponse): WebSearchResult {
-  const sources = (response.references ?? [])
+export function mapBaiduResponse(
+  response: BaiduSearchResponse,
+  maxResults?: number,
+): WebSearchResult {
+  const fromRefs = (response.references ?? [])
     .filter((ref) => ref.type == null || ref.type === 'web')
     .map(mapBaiduReference)
     .filter((source): source is WebSearchSource => source !== undefined)
   const content = response.choices?.[0]?.message?.content?.trim()
+  const recovered = fromRefs.length === 0 && content != null
+    ? extractHttpUrls(content).map((url) => ({ url }))
+    : []
+  const sources = fromRefs.length > 0 ? fromRefs : recovered
   return {
     ...(content != null && content.length > 0 ? { content } : {}),
     sources,
-    truncated: false,
+    truncated: hitResultCap(fromRefs.length, maxResults),
   }
 }
 
@@ -93,6 +101,6 @@ export class BaiduSearchProvider implements WebSearchProvider {
       },
       signal,
     )
-    return mapBaiduResponse(payload as BaiduSearchResponse)
+    return mapBaiduResponse(payload as BaiduSearchResponse, topK)
   }
 }

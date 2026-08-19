@@ -285,6 +285,40 @@ const CSS = `
   line-height: 1.5;
   color: var(--dsw-alias-label-tertiary);
 }
+.dshWebSearchProbe {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  margin-top: 12px;
+  border-top: 1px solid var(--dsw-alias-border-l2);
+}
+.dshWebSearchProbe-btn {
+  font: inherit;
+  width: fit-content;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--dsw-alias-border-l3, color-mix(in srgb, currentColor 18%, transparent));
+  background: transparent;
+  color: inherit;
+}
+.dshWebSearchProbe-btn:disabled {
+  cursor: default;
+  color: var(--dsw-alias-label-tertiary);
+}
+.dshWebSearchProbe-msg {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--dsw-alias-label-secondary);
+}
+.dshWebSearchProbe-msg.is-ok {
+  color: var(--dsw-static-green-450, #34d399);
+}
+.dshWebSearchProbe-msg.is-bad {
+  color: var(--dsw-alias-label-tertiary);
+}
 `
 
 export function ensureSearchStyles(): () => void {

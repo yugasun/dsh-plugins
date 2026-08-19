@@ -34,5 +34,6 @@ describe('mapDoubaoResponse', () => {
       'https://news.example/top',
       'https://news.example/nested',
     ])
+    expect(result.truncated).toBe(false)
   })
 })

@@ -1,4 +1,4 @@
-import { AUTO_PROVIDER_ORDER, type Config } from './config.ts'
+import { AUTO_FETCH_ORDER, AUTO_PROVIDER_ORDER, type Config } from './config.ts'
 import type { EnvLookup } from './env.ts'
 import { firstEnv } from './env.ts'
 import { firstNonEmpty, isPositiveInteger, isValidBaseUrl } from './errors.ts'
@@ -95,15 +95,64 @@ export function isFetchBackend(id: ProviderId | null): id is FetchProviderId {
   return id === 'tavily' || id === 'exa'
 }
 
-/** Tavily/Exa page extract, or DSH built-in HTTP when those backends are not active. */
+export function fetchChoiceOf(config: Config): Config['fetchProvider'] {
+  return config.fetchProvider ?? 'auto'
+}
+
+export function listFetchAvailable(config: Config, secrets: ResolvedSecrets): FetchProviderId[] {
+  return AUTO_FETCH_ORDER.filter((id) => providerUsable(id, config, secrets))
+}
+
+/**
+ * Tavily/Exa page extract, or DSH built-in HTTP.
+ * `fetchProvider` is independent of search except when it is `auto`.
+ */
 export function selectFetchBackend(config: Config, secrets: ResolvedSecrets): FetchProviderId | null {
   if (config.customSearch === false) return null
+  const fetchChoice = fetchChoiceOf(config)
+  if (fetchChoice === 'http') return null
+  if (fetchChoice === 'tavily' || fetchChoice === 'exa') {
+    return providerEndpointReady(fetchChoice, config) ? fetchChoice : null
+  }
   const active = selectActive(config, secrets)
   if (isFetchBackend(active)) return active
   if (config.searchProvider === 'tavily' || config.searchProvider === 'exa') {
     return providerEndpointReady(config.searchProvider, config) ? config.searchProvider : null
   }
   return null
+}
+
+/** Backends the search facade should try, in order. */
+export function searchCandidates(config: Config, secrets: ResolvedSecrets): ProviderId[] {
+  if (config.searchProvider === 'auto') return listAvailable(config, secrets)
+  if (providerUsable(config.searchProvider, config, secrets)) return [config.searchProvider]
+  if (providerEndpointReady(config.searchProvider, config)) return [config.searchProvider]
+  return []
+}
+
+export function searchFailoverEnabled(config: Config): boolean {
+  return config.customSearch !== false && config.searchProvider === 'auto'
+}
+
+/** Backends the fetch facade should try, in order. */
+export function fetchCandidates(config: Config, secrets: ResolvedSecrets): FetchProviderId[] {
+  const fetchChoice = fetchChoiceOf(config)
+  if (config.customSearch === false || fetchChoice === 'http') return []
+  if (fetchChoice === 'tavily' || fetchChoice === 'exa') {
+    return [fetchChoice]
+  }
+  const selected = selectFetchBackend(config, secrets)
+  if (selected == null) return []
+  if (config.searchProvider === 'auto') {
+    return [selected, ...listFetchAvailable(config, secrets).filter((id) => id !== selected)]
+  }
+  return [selected]
+}
+
+export function fetchFailoverEnabled(config: Config): boolean {
+  return config.customSearch !== false
+    && fetchChoiceOf(config) === 'auto'
+    && config.searchProvider === 'auto'
 }
 
 export function configuredFetchProviderId(
@@ -168,7 +217,9 @@ export function pluginStatus(config: Config, secrets: ResolvedSecrets): PluginSt
     seamProvider: configuredSeamProviderId(config),
     fetchProvider: configuredFetchProviderId(config, secrets),
     searchProvider: config.searchProvider,
+    fetchChoice: fetchChoiceOf(config),
     active: config.customSearch !== false ? selectActive(config, secrets) : null,
+    activeFetch: selectFetchBackend(config, secrets),
     providers,
   }
 }

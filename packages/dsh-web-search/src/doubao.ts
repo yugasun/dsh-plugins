@@ -1,6 +1,7 @@
 import type { WebSearchProvider, WebSearchRequest, WebSearchResult, WebSearchSource } from '@deepseek-ai/dsh-web'
 import type { Config } from './config.ts'
 import { firstNonEmpty } from './errors.ts'
+import { hitResultCap } from './urls.ts'
 import { postJson } from './http.ts'
 import { isSelected, type ResolvedSecrets } from './select.ts'
 
@@ -51,7 +52,10 @@ export function mapDoubaoAnnotation(ann: DoubaoAnnotation): WebSearchSource | un
   }
 }
 
-export function mapDoubaoResponse(response: DoubaoSearchResponse): WebSearchResult {
+export function mapDoubaoResponse(
+  response: DoubaoSearchResponse,
+  maxResults?: number,
+): WebSearchResult {
   const texts: string[] = []
   const sources: WebSearchSource[] = []
   const seen = new Set<string>()
@@ -96,7 +100,7 @@ export function mapDoubaoResponse(response: DoubaoSearchResponse): WebSearchResu
   return {
     ...(content === undefined ? {} : { content }),
     sources,
-    truncated: false,
+    truncated: hitResultCap(sources.length, maxResults),
   }
 }
 
@@ -128,6 +132,6 @@ export class DoubaoSearchProvider implements WebSearchProvider {
       },
       signal,
     )
-    return mapDoubaoResponse(payload as DoubaoSearchResponse)
+    return mapDoubaoResponse(payload as DoubaoSearchResponse, limit)
   }
 }

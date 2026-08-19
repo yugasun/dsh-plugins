@@ -23,6 +23,7 @@ export type ProviderId = (typeof PROVIDER_IDS)[number]
 export type SearchProviderChoice = 'auto' | ProviderId
 export const FETCH_PROVIDER_IDS = ['tavily', 'exa'] as const
 export type FetchProviderId = (typeof FETCH_PROVIDER_IDS)[number]
+export type FetchProviderChoice = 'auto' | 'http' | FetchProviderId
 
 /** Id registered on `ctx.web`. Pinned when custom search is on. */
 export const SEAM_PROVIDER_ID = 'dsh-web-search'
@@ -43,8 +44,10 @@ export interface PluginStatus {
   seamProvider: typeof SEAM_PROVIDER_ID | typeof BUILTIN_SEAM_PROVIDER_ID
   fetchProvider: typeof SEAM_PROVIDER_ID | typeof BUILTIN_FETCH_PROVIDER_ID
   searchProvider: SearchProviderChoice
+  fetchChoice: FetchProviderChoice
   active: ProviderId | null
+  activeFetch: FetchProviderId | null
   providers: ProviderStatus[]
 }
 
-export const USER_AGENT = 'dsh-web-search/0.1.0'
+export const USER_AGENT = 'dsh-web-search/0.2.0'

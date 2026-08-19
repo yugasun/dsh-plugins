@@ -9,6 +9,7 @@ import type {
 } from '@deepseek-ai/dsh-web'
 import type { Config } from './config.ts'
 import { requireHttpUrl, toIsoDate } from './errors.ts'
+import { hitResultCap } from './urls.ts'
 import { failedFetchResult, MAX_FETCH_CHARS, textFetchResult } from './fetch-result.ts'
 import { postJson } from './http.ts'
 import { isSelected, type ResolvedSecrets } from './select.ts'
@@ -39,11 +40,14 @@ export function mapExaResult(result: ExaResult): WebSearchSource | undefined {
   }
 }
 
-export function mapExaResponse(response: ExaSearchResponse): WebSearchResult {
+export function mapExaResponse(
+  response: ExaSearchResponse,
+  maxResults?: number,
+): WebSearchResult {
   const sources = (response.results ?? [])
     .map(mapExaResult)
     .filter((source): source is WebSearchSource => source !== undefined)
-  return { sources, truncated: false }
+  return { sources, truncated: hitResultCap(sources.length, maxResults) }
 }
 
 export interface ExaContentsResponse {
@@ -95,7 +99,7 @@ export class ExaSearchProvider implements WebSearchProvider, WebFetchProvider {
       },
       signal,
     )
-    return mapExaResponse(payload as ExaSearchResponse)
+    return mapExaResponse(payload as ExaSearchResponse, request.maxResults)
   }
 
   async fetch(request: WebFetchRequest, signal?: AbortSignal): Promise<WebFetchResult> {

@@ -16,6 +16,17 @@ describe('mapExaResponse', () => {
       { url: 'https://exa.example/b', title: 'B', snippet: 'full text' },
       { url: 'https://exa.example/c' },
     ])
+    expect(result.truncated).toBe(false)
+  })
+
+  it('marks truncated when result count hits maxResults', () => {
+    const result = mapExaResponse({
+      results: [
+        { url: 'https://exa.example/a' },
+        { url: 'https://exa.example/b' },
+      ],
+    }, 2)
+    expect(result.truncated).toBe(true)
   })
 })
 
@@ -64,22 +75,5 @@ describe('ExaSearchProvider.fetch', () => {
       urls: ['https://example.com/doc'],
       ids: ['https://example.com/doc'],
     })
-  })
-})
-
-describe('mapExaResponse', () => {
-  it('prefers highlights and falls back to text', () => {
-    const result = mapExaResponse({
-      results: [
-        { url: 'https://exa.example/a', title: 'A', highlights: ['  first hit  '] },
-        { url: 'https://exa.example/b', title: 'B', text: 'full text' },
-        { url: 'https://exa.example/c', highlights: [''] },
-      ],
-    })
-    expect(result.sources).toEqual([
-      { url: 'https://exa.example/a', title: 'A', snippet: 'first hit' },
-      { url: 'https://exa.example/b', title: 'B', snippet: 'full text' },
-      { url: 'https://exa.example/c' },
-    ])
   })
 })

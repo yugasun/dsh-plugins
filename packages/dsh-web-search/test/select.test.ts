@@ -6,6 +6,7 @@ import { configuredSeamProviderId, facadeAvailable, fetchFacadeAvailable, mergeS
 import { credentialOverlay } from '../src/credentials.ts'
 import { PluginFetchProvider, PluginSearchProvider } from '../src/provider.ts'
 import { BUILTIN_FETCH_PROVIDER_ID, BUILTIN_SEAM_PROVIDER_ID, SEAM_PROVIDER_ID } from '../src/types.ts'
+import { WebError } from '@deepseek-ai/dsh-web'
 
 function config(patch: Partial<Config> = {}): Config {
   return { ...DEFAULT_CONFIG, ...patch }
@@ -160,6 +161,28 @@ describe('fetch backend', () => {
     const secrets = resolveSecrets(current, env())
     expect(selectFetchBackend(current, secrets)).toBe('exa')
   })
+
+  it('can pin Tavily extract while Baidu is the search backend', () => {
+    const current = config({
+      baiduApiKey: 'baidu-test-key',
+      tavilyApiKey: 'tvly-test-key',
+      fetchProvider: 'tavily',
+    })
+    const secrets = resolveSecrets(current, env())
+    expect(selectActive(current, secrets)).toBe('baidu')
+    expect(selectFetchBackend(current, secrets)).toBe('tavily')
+    expect(pluginStatus(current, secrets).activeFetch).toBe('tavily')
+    const web = { searchProviderId: '', fetchProviderId: '' }
+    pinWebSeams(web, current, secrets)
+    expect(web.fetchProviderId).toBe(SEAM_PROVIDER_ID)
+  })
+
+  it('keeps built-in http when fetch is pinned to http even if Tavily search is active', () => {
+    const current = config({ searchProvider: 'tavily', tavilyApiKey: 'tvly-test-key', fetchProvider: 'http' })
+    const secrets = resolveSecrets(current, env())
+    expect(selectFetchBackend(current, secrets)).toBeNull()
+    expect(pluginStatus(current, secrets).fetchProvider).toBe(BUILTIN_FETCH_PROVIDER_ID)
+  })
 })
 
 describe('PluginSearchProvider', () => {
@@ -234,6 +257,101 @@ describe('PluginSearchProvider', () => {
       code: 'WEB_PROVIDER_CONFIGURED_UNAVAILABLE',
     })
   })
+
+  it('auto-fails over from a failing Baidu backend to Tavily', async () => {
+    const current = config({ baiduApiKey: 'baidu-test-key', tavilyApiKey: 'tvly-test-key' })
+    const secrets = resolveSecrets(current, env())
+    const baidu = {
+      id: 'baidu',
+      available: () => true,
+      search: async () => {
+        throw new WebError('Baidu down', 'WEB_PROVIDER_ERROR')
+      },
+    }
+    const tavily = {
+      id: 'tavily',
+      available: () => true,
+      search: async () => ({ sources: [{ url: 'https://tavily.example' }], truncated: false }),
+    }
+    const unused = {
+      id: 'unused',
+      available: () => false,
+      search: async () => {
+        throw new Error('should not run')
+      },
+    }
+    const provider = new PluginSearchProvider(
+      { baidu, doubao: unused, tavily, exa: unused },
+      () => ({ config: current, secrets }),
+      async () => {},
+    )
+    const result = await provider.search({ query: 'hello' })
+    expect(result.sources[0]?.url).toBe('https://tavily.example')
+  })
+
+  it('does not fail over when an explicit backend is selected', async () => {
+    const current = config({
+      searchProvider: 'baidu',
+      baiduApiKey: 'baidu-test-key',
+      tavilyApiKey: 'tvly-test-key',
+    })
+    const secrets = resolveSecrets(current, env())
+    const baidu = {
+      id: 'baidu',
+      available: () => true,
+      search: async () => {
+        throw new WebError('Baidu down', 'WEB_PROVIDER_ERROR')
+      },
+    }
+    const tavily = {
+      id: 'tavily',
+      available: () => true,
+      search: async () => ({ sources: [{ url: 'https://tavily.example' }], truncated: false }),
+    }
+    const unused = {
+      id: 'unused',
+      available: () => false,
+      search: async () => ({ sources: [], truncated: false }),
+    }
+    const provider = new PluginSearchProvider(
+      { baidu, doubao: unused, tavily, exa: unused },
+      () => ({ config: current, secrets }),
+      async () => {},
+    )
+    await expect(provider.search({ query: 'hello' })).rejects.toMatchObject({
+      code: 'WEB_PROVIDER_ERROR',
+    })
+  })
+
+  it('does not fail over on abort', async () => {
+    const current = config({ baiduApiKey: 'baidu-test-key', tavilyApiKey: 'tvly-test-key' })
+    const secrets = resolveSecrets(current, env())
+    const baidu = {
+      id: 'baidu',
+      available: () => true,
+      search: async () => {
+        throw new WebError('Baidu aborted', 'WEB_ABORTED')
+      },
+    }
+    const tavily = {
+      id: 'tavily',
+      available: () => true,
+      search: async () => ({ sources: [{ url: 'https://tavily.example' }], truncated: false }),
+    }
+    const unused = {
+      id: 'unused',
+      available: () => false,
+      search: async () => ({ sources: [], truncated: false }),
+    }
+    const provider = new PluginSearchProvider(
+      { baidu, doubao: unused, tavily, exa: unused },
+      () => ({ config: current, secrets }),
+      async () => {},
+    )
+    await expect(provider.search({ query: 'hello' })).rejects.toMatchObject({
+      code: 'WEB_ABORTED',
+    })
+  })
 })
 
 describe('PluginFetchProvider', () => {
@@ -287,5 +405,71 @@ describe('PluginFetchProvider', () => {
       name: 'WebError',
       code: 'WEB_PROVIDER_CREDENTIAL_MISSING',
     })
+  })
+
+  it('dispatches extract to Tavily when fetch is pinned and search is Baidu', async () => {
+    const current = config({
+      searchProvider: 'baidu',
+      fetchProvider: 'tavily',
+      baiduApiKey: 'baidu-test-key',
+      tavilyApiKey: 'tvly-test-key',
+    })
+    const secrets = resolveSecrets(current, env())
+    const tavily = {
+      id: 'tavily',
+      available: () => true,
+      fetch: async () => ({
+        url: 'https://example.com',
+        statusCode: 200,
+        body: { kind: 'text' as const, content: 'extracted' },
+        truncated: false,
+      }),
+    }
+    const unused = {
+      id: 'exa',
+      available: () => false,
+      fetch: async () => {
+        throw new Error('should not fetch exa')
+      },
+    }
+    const provider = new PluginFetchProvider(
+      { tavily, exa: unused },
+      () => ({ config: current, secrets }),
+      async () => {},
+    )
+    const result = await provider.fetch({ url: 'https://example.com' })
+    expect(result.body).toEqual({ kind: 'text', content: 'extracted' })
+  })
+
+  it('auto-fails over fetch from Tavily to Exa', async () => {
+    const current = config({
+      tavilyApiKey: 'tvly-test-key',
+      exaApiKey: 'exa-test-key',
+    })
+    const secrets = resolveSecrets(current, env())
+    const tavily = {
+      id: 'tavily',
+      available: () => true,
+      fetch: async () => {
+        throw new WebError('Tavily extract down', 'WEB_PROVIDER_ERROR')
+      },
+    }
+    const exa = {
+      id: 'exa',
+      available: () => true,
+      fetch: async () => ({
+        url: 'https://example.com',
+        statusCode: 200,
+        body: { kind: 'text' as const, content: 'exa page' },
+        truncated: false,
+      }),
+    }
+    const provider = new PluginFetchProvider(
+      { tavily, exa },
+      () => ({ config: current, secrets }),
+      async () => {},
+    )
+    const result = await provider.fetch({ url: 'https://example.com' })
+    expect(result.body).toEqual({ kind: 'text', content: 'exa page' })
   })
 })

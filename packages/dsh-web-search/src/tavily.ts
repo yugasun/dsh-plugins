@@ -9,6 +9,7 @@ import type {
 } from '@deepseek-ai/dsh-web'
 import type { Config } from './config.ts'
 import { requireHttpUrl, toIsoDate } from './errors.ts'
+import { hitResultCap } from './urls.ts'
 import { failedFetchResult, textFetchResult } from './fetch-result.ts'
 import { postJson } from './http.ts'
 import { isSelected, type ResolvedSecrets } from './select.ts'
@@ -81,7 +82,10 @@ export function mapTavilyResult(result: TavilyResult): WebSearchSource | undefin
   }
 }
 
-export function mapTavilyResponse(response: TavilySearchResponse): WebSearchResult {
+export function mapTavilyResponse(
+  response: TavilySearchResponse,
+  maxResults?: number,
+): WebSearchResult {
   const sources = (response.results ?? [])
     .map(mapTavilyResult)
     .filter((source): source is WebSearchSource => source !== undefined)
@@ -89,7 +93,7 @@ export function mapTavilyResponse(response: TavilySearchResponse): WebSearchResu
   return {
     ...(content != null && content.length > 0 ? { content } : {}),
     sources,
-    truncated: false,
+    truncated: hitResultCap(sources.length, maxResults),
   }
 }
 
@@ -107,6 +111,7 @@ export class TavilySearchProvider implements WebSearchProvider, WebFetchProvider
 
   async search(request: WebSearchRequest, signal?: AbortSignal): Promise<WebSearchResult> {
     const { config, secrets } = this.resolve()
+    const maxResults = request.maxResults ?? 8
     const payload = await postJson(
       'Tavily',
       `${config.tavilyBaseURL.replace(/\/$/, '')}/search`,
@@ -114,14 +119,14 @@ export class TavilySearchProvider implements WebSearchProvider, WebFetchProvider
       {
         query: request.query,
         search_depth: config.tavilySearchDepth,
-        max_results: request.maxResults ?? 8,
+        max_results: maxResults,
         include_answer: true,
         include_raw_content: false,
         include_images: false,
       },
       signal,
     )
-    return mapTavilyResponse(payload as TavilySearchResponse)
+    return mapTavilyResponse(payload as TavilySearchResponse, maxResults)
   }
 
   async fetch(request: WebFetchRequest, signal?: AbortSignal): Promise<WebFetchResult> {

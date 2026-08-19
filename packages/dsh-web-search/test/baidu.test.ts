@@ -41,6 +41,32 @@ describe('mapBaiduResponse', () => {
     expect(result.sources[0]?.publishedAt).toBe(new Date('2026-04-27T18:02:00').toISOString())
     expect(result.content).toBe('北京有很多值得游览的景点。')
   })
+
+  it('recovers https URLs from the summary when Qianfan returns no web references', () => {
+    const result = mapBaiduResponse({
+      choices: [{
+        message: {
+          content: '详见 https://example.com/wiki 与 https://news.example/a。',
+        },
+      }],
+    })
+    expect(result.sources.map((source) => source.url)).toEqual([
+      'https://example.com/wiki',
+      'https://news.example/a',
+    ])
+    expect(result.truncated).toBe(false)
+  })
+
+  it('marks truncated when web references fill the requested cap', () => {
+    const result = mapBaiduResponse({
+      references: [
+        { type: 'web', url: 'https://example.com/a' },
+        { type: 'web', url: 'https://example.com/b' },
+      ],
+    }, 2)
+    expect(result.sources).toHaveLength(2)
+    expect(result.truncated).toBe(true)
+  })
 })
 
 describe('BaiduSearchProvider.search', () => {

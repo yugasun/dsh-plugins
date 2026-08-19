@@ -17,6 +17,17 @@ describe('mapTavilyResponse', () => {
       title: 'A',
       snippet: 'alpha',
     })
+    expect(result.truncated).toBe(false)
+  })
+
+  it('marks truncated when result count hits maxResults', () => {
+    const result = mapTavilyResponse({
+      results: [
+        { url: 'https://tavily.example/a' },
+        { url: 'https://tavily.example/b' },
+      ],
+    }, 2)
+    expect(result.truncated).toBe(true)
   })
 })
 
@@ -40,24 +51,5 @@ describe('mapTavilyExtractResponse', () => {
     })
     expect(result.statusCode).toBe(502)
     expect(result.body).toEqual({ kind: 'text', content: 'Failed to extract content' })
-  })
-})
-
-describe('mapTavilyResponse', () => {
-  it('maps answer and results into content plus sources', () => {
-    const result = mapTavilyResponse({
-      answer: 'Tavily summary',
-      results: [
-        { url: 'https://tavily.example/a', title: 'A', content: 'alpha', published_date: '2026-01-02' },
-        { title: 'Missing url' },
-      ],
-    })
-    expect(result.content).toBe('Tavily summary')
-    expect(result.sources).toHaveLength(1)
-    expect(result.sources[0]).toMatchObject({
-      url: 'https://tavily.example/a',
-      title: 'A',
-      snippet: 'alpha',
-    })
   })
 })

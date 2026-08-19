@@ -1,6 +1,18 @@
 import { WebError } from '@deepseek-ai/dsh-web'
 import type { Config } from './config.ts'
-import { SECRET_ENVS, facadeAvailable, fetchFacadeAvailable, selectActive, selectFetchBackend, type ResolvedSecrets } from './select.ts'
+import { firstSuccessful } from './failover.ts'
+import {
+  SECRET_ENVS,
+  facadeAvailable,
+  fetchCandidates,
+  fetchChoiceOf,
+  fetchFacadeAvailable,
+  fetchFailoverEnabled,
+  providerUsable,
+  searchCandidates,
+  searchFailoverEnabled,
+  type ResolvedSecrets,
+} from './select.ts'
 import type {
   FetchProviderId,
   ProviderId,
@@ -66,12 +78,19 @@ export class PluginSearchProvider implements WebSearchProvider {
         'WEB_PROVIDER_CONFIGURED_UNAVAILABLE',
       )
     }
-    const id = selectActive(config, secrets)
-    if (id == null) {
+    const ids = searchCandidates(config, secrets)
+    if (ids.length === 0) {
       if (config.searchProvider === 'auto') missingAnyCredential()
       missingCredential(config.searchProvider)
     }
-    return this.backends[id].search(request, signal)
+    return firstSuccessful(
+      ids,
+      async (id) => {
+        if (!providerUsable(id, config, secrets)) missingCredential(id)
+        return this.backends[id].search(request, signal)
+      },
+      { failover: searchFailoverEnabled(config), signal, label: 'web_search' },
+    )
   }
 }
 
@@ -98,14 +117,26 @@ export class PluginFetchProvider implements WebFetchProvider {
         'WEB_PROVIDER_CONFIGURED_UNAVAILABLE',
       )
     }
-    const id = selectFetchBackend(config, secrets)
-    if (id == null) {
+    if (fetchChoiceOf(config) === 'http') {
       throw new WebError(
-        'Page extract is only available when Tavily or Exa is the active backend. Otherwise web_fetch uses DSH built-in http.',
+        'Page extract is set to DSH built-in http.',
         'WEB_PROVIDER_CONFIGURED_UNAVAILABLE',
       )
     }
-    if (selectActive(config, secrets) !== id) missingCredential(id)
-    return this.backends[id].fetch(request, signal)
+    const ids = fetchCandidates(config, secrets)
+    if (ids.length === 0) {
+      throw new WebError(
+        'Page extract is only available when Tavily or Exa is selected for web_fetch. Otherwise web_fetch uses DSH built-in http.',
+        'WEB_PROVIDER_CONFIGURED_UNAVAILABLE',
+      )
+    }
+    return firstSuccessful(
+      ids,
+      async (id) => {
+        if (!providerUsable(id, config, secrets)) missingCredential(id)
+        return this.backends[id].fetch(request, signal)
+      },
+      { failover: fetchFailoverEnabled(config), signal, label: 'web_fetch' },
+    )
   }
 }
