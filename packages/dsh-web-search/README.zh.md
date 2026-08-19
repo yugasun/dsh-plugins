@@ -51,7 +51,7 @@ dsh plugin --profile web remove @yugasun/dsh-web-search
 
 密钥可以写在插件设置、DSH 凭据（`TAVILY_API_KEY` 等）或 `~/.dsh/.env`。设置里的密钥不会回显到前端。
 
-「设置 → 网络搜索」里的 **自定义搜索** 开关决定走 DSH 内置还是本插件。开启后默认 **自动** 按 百度 → 豆包 → Tavily → Exa 选用第一个已配置的；请求失败会试下一家，指定某一家则不会。**网页提取** 与搜索独立：自动时，当前搜索是 Tavily / Exa 才走对应提取，否则用内置 `http`；也可以固定 Tavily / Exa / 内置 HTTP。每张卡片有 **测试连接**。Agent 里 `export TAVILY_API_KEY=…` **不会**进入 Harness 进程。
+「设置 → 网络搜索」里的 **自定义搜索** 开关决定走 DSH 内置还是本插件。开启后默认 **自动** 按 百度 → 豆包 → Tavily → Exa 选用第一个已配置的；请求失败会试下一家，并在 harness 日志里记下跳过了谁，指定某一家则不会。**网页提取** 与搜索独立：自动时，当前搜索是 Tavily / Exa 才走对应提取，否则用内置 `http`；也可以固定 Tavily / Exa / 内置 HTTP。每张卡片有 **测试连接**。Agent 里 `export TAVILY_API_KEY=…` **不会**进入 Harness 进程。
 
 ## 开发
 

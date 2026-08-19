@@ -1,6 +1,7 @@
 import { WebError } from '@deepseek-ai/dsh-web'
 import type { Config } from './config.ts'
-import { firstSuccessful } from './failover.ts'
+import { errorCode, firstSuccessful } from './failover.ts'
+import type { Logger } from './host-types.ts'
 import {
   SECRET_ENVS,
   facadeAvailable,
@@ -62,6 +63,7 @@ export class PluginSearchProvider implements WebSearchProvider {
     private readonly backends: Record<ProviderId, WebSearchProvider>,
     private readonly resolve: () => { config: Config; secrets: ResolvedSecrets },
     private readonly refresh: () => Promise<void>,
+    private readonly logger?: Logger,
   ) {}
 
   available(): boolean {
@@ -89,8 +91,18 @@ export class PluginSearchProvider implements WebSearchProvider {
         if (!providerUsable(id, config, secrets)) missingCredential(id)
         return this.backends[id].search(request, signal)
       },
-      { failover: searchFailoverEnabled(config), signal, label: 'web_search' },
+      {
+        failover: searchFailoverEnabled(config),
+        signal,
+        label: 'web_search',
+        onSkip: (id, error) => this.warnSkip('web_search', id, error),
+      },
     )
+  }
+
+  private warnSkip(label: string, id: string, error: unknown): void {
+    const code = errorCode(error) ?? 'error'
+    this.logger?.warn(`[dsh-web-search] ${label} ${id} failed (${code}), trying the next backend`)
   }
 }
 
@@ -101,6 +113,7 @@ export class PluginFetchProvider implements WebFetchProvider {
     private readonly backends: Record<FetchProviderId, WebFetchProvider>,
     private readonly resolve: () => { config: Config; secrets: ResolvedSecrets },
     private readonly refresh: () => Promise<void>,
+    private readonly logger?: Logger,
   ) {}
 
   available(): boolean {
@@ -136,7 +149,15 @@ export class PluginFetchProvider implements WebFetchProvider {
         if (!providerUsable(id, config, secrets)) missingCredential(id)
         return this.backends[id].fetch(request, signal)
       },
-      { failover: fetchFailoverEnabled(config), signal, label: 'web_fetch' },
+      {
+        failover: fetchFailoverEnabled(config),
+        signal,
+        label: 'web_fetch',
+        onSkip: (id, error) => {
+          const code = errorCode(error) ?? 'error'
+          this.logger?.warn(`[dsh-web-search] web_fetch ${id} failed (${code}), trying the next backend`)
+        },
+      },
     )
   }
 }

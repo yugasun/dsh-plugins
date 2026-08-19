@@ -57,7 +57,7 @@ Installing the plugin can retarget official `web_search` at this package's facad
 
 - **Off**: `web_search` uses DSH built-in `deepseek-official`; `web_fetch` uses `http`
 - **On** (default): pick the search backend below
-  - **Auto** (default): first configured backend in order Baidu → Doubao → Tavily → Exa. If that request fails with a recoverable error, the next configured backend is tried. An explicit backend does not fail over.
+  - **Auto** (default): first configured backend in order Baidu → Doubao → Tavily → Exa. If that request fails with a recoverable error, the next configured backend is tried and the harness log records which one was skipped. An explicit backend does not fail over.
   - **Explicit**: Baidu / Doubao / Tavily / Exa
 - **Page extract** (independent of search)
   - **Auto** (default): Tavily Extract or Exa Contents when that search backend is active; otherwise DSH built-in `http`

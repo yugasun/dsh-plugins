@@ -280,13 +280,18 @@ describe('PluginSearchProvider', () => {
         throw new Error('should not run')
       },
     }
+    const warnings: string[] = []
     const provider = new PluginSearchProvider(
       { baidu, doubao: unused, tavily, exa: unused },
       () => ({ config: current, secrets }),
       async () => {},
+      { warn: (message) => warnings.push(message) },
     )
     const result = await provider.search({ query: 'hello' })
     expect(result.sources[0]?.url).toBe('https://tavily.example')
+    expect(warnings).toEqual([
+      '[dsh-web-search] web_search baidu failed (WEB_PROVIDER_ERROR), trying the next backend',
+    ])
   })
 
   it('does not fail over when an explicit backend is selected', async () => {

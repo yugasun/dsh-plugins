@@ -64,11 +64,13 @@ export function apply(ctx: Context, config: Config): void {
     backends,
     resolve,
     refreshOverlay,
+    host.logger,
   ))
   host.web.registerFetchProvider(new PluginFetchProvider(
     { tavily, exa },
     resolve,
     refreshOverlay,
+    host.logger,
   ))
 
   void refreshOverlay()

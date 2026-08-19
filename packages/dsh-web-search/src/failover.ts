@@ -21,7 +21,12 @@ export function isRecoverableProviderError(error: unknown): boolean {
 export async function firstSuccessful<I extends string, T>(
   ids: readonly I[],
   run: (id: I) => Promise<T>,
-  options: { failover: boolean; signal?: AbortSignal; label: string },
+  options: {
+    failover: boolean
+    signal?: AbortSignal
+    label: string
+    onSkip?: (id: I, error: unknown) => void
+  },
 ): Promise<T> {
   let last: unknown
   for (let i = 0; i < ids.length; i += 1) {
@@ -42,6 +47,7 @@ export async function firstSuccessful<I extends string, T>(
       ) {
         throw error
       }
+      options.onSkip?.(id, error)
     }
   }
   if (last !== undefined) throw last
