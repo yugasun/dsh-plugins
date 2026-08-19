@@ -50,4 +50,4 @@ export interface PluginStatus {
   providers: ProviderStatus[]
 }
 
-export const USER_AGENT = 'dsh-web-search/0.2.0'
+export { USER_AGENT } from './user-agent.ts'
