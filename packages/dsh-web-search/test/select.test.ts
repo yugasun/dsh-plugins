@@ -6,7 +6,7 @@ import { configuredSeamProviderId, facadeAvailable, fetchFacadeAvailable, mergeS
 import { credentialOverlay } from '../src/credentials.ts'
 import { PluginFetchProvider, PluginSearchProvider } from '../src/provider.ts'
 import { BUILTIN_FETCH_PROVIDER_ID, BUILTIN_SEAM_PROVIDER_ID, SEAM_PROVIDER_ID } from '../src/types.ts'
-import { WebError } from '@deepseek-ai/dsh-web'
+import { WebError } from '../src/host.ts'
 
 function config(patch: Partial<Config> = {}): Config {
   return { ...DEFAULT_CONFIG, ...patch }

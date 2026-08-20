@@ -1,4 +1,4 @@
-import { WebError } from '@deepseek-ai/dsh-web'
+import { WebError } from './host.ts'
 import { abortRequest } from './errors.ts'
 
 export function errorCode(error: unknown): string | undefined {

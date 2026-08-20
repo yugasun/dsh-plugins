@@ -1,4 +1,4 @@
-import { WebError } from '@deepseek-ai/dsh-web'
+import { WebError } from './host.ts'
 
 export function isAbortError(error: unknown): boolean {
   return (error instanceof DOMException && error.name === 'AbortError')

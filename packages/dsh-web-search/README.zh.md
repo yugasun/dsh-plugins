@@ -18,10 +18,9 @@
 dsh plugin --profile web add @yugasun/dsh-web-search
 ```
 
-从本仓库本地路径（`dsh plugin add` 会 `link` 到源码，Node 从源码目录解析 `@deepseek-ai/*`。必须先在仓库根目录执行 `pnpm install`。相对路径是相对 **profile 目录** 解析的，请用 `$PWD` 绝对路径）：
+从本仓库本地路径（相对路径是相对 **profile 目录** 解析的，请用 `$PWD`。`link:` 后插件会从 DSH profile / 安装树解析 `@deepseek-ai/*`，不必先有本仓库的 `node_modules` 才能启动）：
 
 ```sh
-pnpm install
 dsh plugin --profile web add "$PWD/packages/dsh-web-search"
 dsh plugin --profile desktop add "$PWD/packages/dsh-web-search"
 ```

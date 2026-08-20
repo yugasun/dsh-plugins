@@ -18,10 +18,9 @@ From npm:
 dsh plugin --profile web add @yugasun/dsh-web-search
 ```
 
-From a clone of this monorepo (`dsh plugin add` `link`s the source tree, so Node resolves `@deepseek-ai/*` from this package. Run `pnpm install` at the repo root first. Relative paths resolve against the **profile directory**, not your cwd — use `$PWD`):
+From a clone of this monorepo (relative paths resolve against the **profile directory**, not your cwd — use `$PWD`. After a `link:` install the plugin resolves `@deepseek-ai/*` from the DSH profile / install, so repo `node_modules` is not required to boot):
 
 ```sh
-pnpm install
 dsh plugin --profile web add "$PWD/packages/dsh-web-search"
 dsh plugin --profile desktop add "$PWD/packages/dsh-web-search"
 ```

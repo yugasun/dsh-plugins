@@ -1,5 +1,5 @@
 import type { Context } from '@deepseek-ai/cordis'
-import { installSettingsSection, settingsNamespace } from '@deepseek-ai/dsh-settings'
+import { installSettingsSection, settingsNamespace } from './host.ts'
 import { BaiduSearchProvider } from './baidu.ts'
 import { Config, SETTINGS_NS } from './config.ts'
 import { credentialOverlay, type Credentials } from './credentials.ts'

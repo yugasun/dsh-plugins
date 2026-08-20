@@ -1,4 +1,5 @@
-import Schema from '@deepseek-ai/schemastery'
+import type SchemaType from '@deepseek-ai/schemastery'
+import { Schema } from './host.ts'
 import type { FetchProviderChoice, SearchProviderChoice } from './types.ts'
 
 export interface Config {
@@ -35,7 +36,7 @@ export const EXA_DEFAULT_BASE_URL = 'https://api.exa.ai'
 export const EXA_DEFAULT_PROVIDER_ID = 'exa'
 export const EXA_DEFAULT_HIGHLIGHTS = 1
 
-export const Config: Schema<Config> = Schema.object({
+export const Config: SchemaType<Config> = Schema.object({
   customSearch: Schema.boolean().default(true).description(
     'When on, web_search uses a backend configured on this page. When off, it uses DSH built-in DeepSeek search.',
   ),

@@ -1,4 +1,4 @@
-import { WebError } from '@deepseek-ai/dsh-web'
+import { WebError } from './host.ts'
 import type { Config } from './config.ts'
 import { errorCode, firstSuccessful } from './failover.ts'
 import type { Logger } from './host-types.ts'

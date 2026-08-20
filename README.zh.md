@@ -29,7 +29,7 @@ pnpm typecheck
 pnpm build
 ```
 
-把本地仓库装进 profile（先 `pnpm install`。相对路径相对 **profile 目录** 解析，不要写 `./packages/...`）：
+把本地仓库装进 profile（相对路径相对 **profile 目录** 解析，不要写 `./packages/...`）：
 
 ```sh
 dsh plugin --profile web add "$PWD/packages/dsh-web-search"

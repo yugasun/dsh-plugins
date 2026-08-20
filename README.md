@@ -29,7 +29,7 @@ pnpm typecheck
 pnpm build
 ```
 
-Load a local checkout into a profile (needs the `pnpm install` above. Relative paths resolve against the **profile directory**, not cwd):
+Load a local checkout into a profile (relative paths resolve against the **profile directory**, not cwd):
 
 ```sh
 dsh plugin --profile web add "$PWD/packages/dsh-web-search"
