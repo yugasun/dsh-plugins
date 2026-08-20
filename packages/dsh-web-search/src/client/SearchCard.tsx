@@ -1,9 +1,12 @@
 import { createElement as h, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { ClientConfig, FetchProviderChoice, ProbeResult, ProviderId, SearchProviderChoice, SettingsScope } from './model.ts'
-import { FETCH_OPTIONS, PROVIDER_OPTIONS } from './model.ts'
+import { DOUBAO_DOCS, FETCH_OPTIONS, firstOpenProvider, PROVIDER_KEY_URLS, PROVIDER_OPTIONS, VENDOR_ORDER } from './model.ts'
+import { EngineTabs } from './EngineTabs.tsx'
 import { secretCommit, secretDisplay } from './secret-field.ts'
 import { useSearchStatus } from './useSearchStatus.ts'
 import { useSettingsScope } from './useSettingsScope.ts'
+
+type ProbeState = ProbeResult | 'need-key' | null
 
 interface SearchCardProps {
   t: (key: string) => string
@@ -13,15 +16,99 @@ interface SearchCardProps {
 function Field(props: {
   label: string
   hint?: string
+  htmlFor?: string
+  action?: ReactNode
   children?: ReactNode
 }) {
   return h(
     'div',
     { className: 'dshWebSearchField' },
-    h('div', { className: 'dshWebSearchField-label' }, props.label),
+    h(
+      'div',
+      { className: 'dshWebSearchField-head' },
+      h(props.htmlFor ? 'label' : 'div', {
+        className: 'dshWebSearchField-label',
+        htmlFor: props.htmlFor,
+      }, props.label),
+      props.action ?? null,
+    ),
     props.hint ? h('p', { className: 'dshWebSearchField-hint' }, props.hint) : null,
     props.children,
   )
+}
+
+function ExternalIcon() {
+  return h(
+    'svg',
+    {
+      className: 'dshWebSearchExt-icon',
+      width: 12,
+      height: 12,
+      viewBox: '0 0 16 16',
+      fill: 'none',
+      'aria-hidden': true,
+      focusable: false,
+    },
+    h('path', {
+      d: 'M6.5 3H3.5A1.5 1.5 0 0 0 2 4.5v8A1.5 1.5 0 0 0 3.5 14h8A1.5 1.5 0 0 0 13 12.5V9.5M9 2h5v5M8 8l6-6',
+      stroke: 'currentColor',
+      strokeWidth: 1.5,
+      strokeLinecap: 'round',
+      strokeLinejoin: 'round',
+    }),
+  )
+}
+
+function ExtLink(props: {
+  href: string
+  label: string
+  children: ReactNode
+  className?: string
+}) {
+  return h(
+    'a',
+    {
+      className: `dshWebSearchExt${props.className ? ` ${props.className}` : ''}`,
+      href: props.href,
+      target: '_blank',
+      rel: 'noopener noreferrer',
+      'aria-label': props.label,
+    },
+    props.children,
+    h(ExternalIcon),
+  )
+}
+
+function KeyField(props: {
+  id: string
+  vendor: ProviderId
+  label: string
+  hint: string
+  placeholder: string
+  configured: boolean
+  disabled: boolean
+  t: (key: string) => string
+  onSave: (value: string) => void
+}) {
+  const getKey = props.t('getApiKey')
+  return h(Field, {
+    htmlFor: props.id,
+    label: props.label,
+    hint: props.hint,
+    action: h(ExtLink, {
+      href: PROVIDER_KEY_URLS[props.vendor],
+      label: `${getKey} (${props.t(props.vendor)}) · ${props.t('opensNewTab')}`,
+      children: getKey,
+    }),
+    children: h(SecretField, {
+      id: props.id,
+      configured: props.configured,
+      savedLabel: props.t('saved'),
+      placeholder: props.placeholder,
+      disabled: props.disabled,
+      onSave: props.onSave,
+    }),
+  })
 }
 
 function Switch(props: {
@@ -50,6 +137,7 @@ function Switch(props: {
 }
 
 function SecretField(props: {
+  id?: string
   configured: boolean
   savedLabel: string
   placeholder?: string
@@ -71,6 +159,7 @@ function SecretField(props: {
     'div',
     { className: 'dshWebSearchSecret' },
     h('input', {
+      id: props.id,
       type: 'password',
       className: 'dshWebSearchField-input',
       value: secretDisplay(draft, props.configured),
@@ -98,12 +187,14 @@ function SecretField(props: {
 }
 
 function TextField(props: {
+  id?: string
   value?: string
   placeholder?: string
   disabled: boolean
   onChange: (value: string) => void
 }) {
   return h('input', {
+    id: props.id,
     type: 'text',
     className: 'dshWebSearchField-input',
     value: props.value ?? '',
@@ -116,6 +207,7 @@ function TextField(props: {
 }
 
 function SelectField(props: {
+  id?: string
   value: string
   disabled: boolean
   options: Array<{ id: string; label: string }>
@@ -124,6 +216,7 @@ function SelectField(props: {
   return h(
     'select',
     {
+      id: props.id,
       className: 'dshWebSearchField-input',
       value: props.value,
       disabled: props.disabled,
@@ -188,10 +281,11 @@ function ProbeButton(props: {
   configured: boolean
   disabled: boolean
   t: (key: string) => string
+  result: ProbeState
+  onResult: (result: ProbeState) => void
   onDone: () => void
 }) {
   const [busy, setBusy] = useState(false)
-  const [result, setResult] = useState<ProbeResult | 'need-key' | null>(null)
   const acRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
@@ -200,14 +294,14 @@ function ProbeButton(props: {
 
   const run = () => {
     if (!props.configured) {
-      setResult('need-key')
+      props.onResult('need-key')
       return
     }
     acRef.current?.abort()
     const ac = new AbortController()
     acRef.current = ac
     setBusy(true)
-    setResult(null)
+    props.onResult(null)
     void fetch('/dsh-web-search/probe', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -223,12 +317,12 @@ function ProbeButton(props: {
           body = { ok: false, provider: props.id, error: `HTTP ${response.status}` }
         }
         if (ac.signal.aborted) return
-        setResult(body)
+        props.onResult(body)
         if (body.ok) props.onDone()
       })
       .catch((error: unknown) => {
         if (ac.signal.aborted) return
-        setResult({
+        props.onResult({
           ok: false,
           provider: props.id,
           error: error instanceof Error ? error.message : String(error),
@@ -241,6 +335,7 @@ function ProbeButton(props: {
 
   let message: string | null = null
   let tone = ''
+  const result = props.result
   if (result === 'need-key') {
     message = props.t('testNeedKey')
     tone = 'is-bad'
@@ -261,7 +356,7 @@ function ProbeButton(props: {
       'button',
       {
         type: 'button',
-        className: 'dshWebSearchProbe-btn',
+        className: `dshWebSearchProbe-btn${props.configured ? ' is-primary' : ''}`,
         disabled: props.disabled || busy,
         'aria-busy': busy,
         onClick: run,
@@ -271,39 +366,6 @@ function ProbeButton(props: {
     message
       ? h('p', { className: `dshWebSearchProbe-msg ${tone}`, role: 'status' }, message)
       : null,
-  )
-}
-
-function ProviderCard(props: {
-  title: string
-  description: string
-  badge: string
-  kind: 'on' | 'ready' | 'off'
-  open: boolean
-  onToggle: () => void
-  children?: ReactNode
-}) {
-  return h(
-    'section',
-    { className: `dshWebSearchCard${props.kind === 'on' ? ' is-on' : ''}${props.open ? ' is-open' : ''}` },
-    h(
-      'button',
-      {
-        type: 'button',
-        className: 'dshWebSearchCard-head',
-        'aria-expanded': props.open,
-        onClick: props.onToggle,
-      },
-      h(
-        'span',
-        { className: 'dshWebSearchCard-text' },
-        h('span', { className: 'dshWebSearchCard-name' }, props.title),
-        h('span', { className: 'dshWebSearchCard-desc' }, props.description),
-      ),
-      h('span', { className: `dshWebSearchCard-badge is-${props.kind}` }, props.badge),
-      h('span', { className: `dshWebSearchCard-chevron${props.open ? ' is-open' : ''}`, 'aria-hidden': true }),
-    ),
-    props.open ? h('div', { className: 'dshWebSearchCard-body' }, props.children) : null,
   )
 }
 
@@ -335,7 +397,9 @@ export function SearchCard(props: SearchCardProps) {
   const snap = useSettingsScope(props.scope)
   const value = snap.value
   const { status, refresh } = useSearchStatus()
-  const [openId, setOpenId] = useState<ProviderId | null | 'init'>('init')
+  const [selectedTab, setSelectedTab] = useState<ProviderId | 'init'>('init')
+  const [probeByVendor, setProbeByVendor] = useState<Partial<Record<ProviderId, ProbeState>>>({})
+  const panelRef = useRef<HTMLDivElement>(null)
 
   if (!value) {
     return h('p', { className: 'dshWebSearchStatus-empty' }, props.t('loading'))
@@ -343,16 +407,20 @@ export function SearchCard(props: SearchCardProps) {
 
   const disabled = !snap.writable
   const custom = value.customSearch !== false
+  const t = props.t
   const fetchChoice: FetchProviderChoice = value.fetchProvider ?? 'auto'
   const configured = (id: ProviderId) =>
     status.providers.find((provider) => provider.id === id)?.configured === true
+  const anyConfigured = VENDOR_ORDER.some((id) => configured(id))
   const set = (field: string, next: unknown) => {
     void props.scope.set(field, next).then(() => refresh())
   }
-  const preferred: ProviderId | null = value.searchProvider === 'auto'
-    ? status.active
-    : value.searchProvider
-  const open = !custom ? null : openId === 'init' ? preferred : openId
+  const initialTab: ProviderId = firstOpenProvider(
+    value.searchProvider,
+    status.active,
+    configured,
+  )
+  const selected: ProviderId = selectedTab === 'init' ? initialTab : selectedTab
   const kindOf = (id: ProviderId): 'on' | 'ready' | 'off' => {
     if (custom && status.active === id) return 'on'
     if (configured(id)) return 'ready'
@@ -364,10 +432,241 @@ export function SearchCard(props: SearchCardProps) {
     if (kind === 'ready') return props.t('ready')
     return props.t('missing')
   }
-  const toggle = (id: ProviderId) => {
-    setOpenId(open === id ? null : id)
+  const setProbeResult = (id: ProviderId, result: ProbeState) => {
+    setProbeByVendor((prev) => ({ ...prev, [id]: result }))
   }
-  const t = props.t
+
+  const vendorPanel = (id: ProviderId): ReactNode => {
+    const probeProps = {
+      configured: configured(id),
+      disabled,
+      t,
+      result: probeByVendor[id] ?? null,
+      onResult: (result: ProbeState) => setProbeResult(id, result),
+      onDone: refresh,
+    }
+    if (id === 'baidu') {
+      return [
+        h(Field, {
+          key: 'baidu-mode',
+          label: t('baiduMode'),
+          hint: t('baiduModeHint'),
+          children: h(Seg, {
+            value: value.baiduSearchMode === 'ai' ? 'ai' : 'web',
+            disabled,
+            label: t('baiduMode'),
+            options: [
+              { id: 'web', label: t('baiduModeWeb') },
+              { id: 'ai', label: t('baiduModeAi') },
+            ],
+            onChange: (next) => set('baiduSearchMode', next),
+          }),
+        }),
+        value.baiduSearchMode === 'ai'
+          ? h('p', { key: 'baidu-note', className: 'dshWebSearchPanel-note' }, t('baiduNote'))
+          : null,
+        h(KeyField, {
+          key: 'baidu-key',
+          id: 'dsh-web-search-baidu-key',
+          vendor: 'baidu',
+          label: t('baiduKey'),
+          hint: t('baiduKeyHint'),
+          placeholder: 'BAIDU_API_KEY',
+          configured: configured('baidu'),
+          disabled,
+          t,
+          onSave: (next) => set('baiduApiKey', next),
+        }),
+        value.baiduSearchMode === 'ai'
+          ? h(Field, {
+            key: 'baidu-model',
+            htmlFor: 'dsh-web-search-baidu-model',
+            label: t('baiduModel'),
+            hint: t('baiduModelHint'),
+            children: h(TextField, {
+              id: 'dsh-web-search-baidu-model',
+              value: value.baiduModel,
+              disabled,
+              onChange: (next) => set('baiduModel', next),
+            }),
+          })
+          : null,
+        h(
+          'details',
+          { key: 'baidu-endpoint', className: 'dshWebSearchDetails' },
+          h('summary', null, t('endpoint')),
+          h(TextField, {
+            value: value.baiduBaseURL,
+            disabled,
+            onChange: (next) => set('baiduBaseURL', next),
+          }),
+        ),
+        h(ProbeButton, { key: 'baidu-probe', id: 'baidu', ...probeProps }),
+      ]
+    }
+    if (id === 'doubao') {
+      return [
+        h(Field, {
+          key: 'doubao-mode',
+          label: t('doubaoMode'),
+          hint: t('doubaoModeHint'),
+          action: h(ExtLink, {
+            href: DOUBAO_DOCS[value.doubaoSearchMode === 'global' ? 'global' : 'custom'],
+            label: `${t('doubaoDocs')} · ${t('opensNewTab')}`,
+            children: t('doubaoDocs'),
+          }),
+          children: h(Seg, {
+            value: value.doubaoSearchMode === 'global' ? 'global' : 'custom',
+            disabled,
+            label: t('doubaoMode'),
+            options: [
+              { id: 'custom', label: t('doubaoModeCustom') },
+              { id: 'global', label: t('doubaoModeGlobal') },
+            ],
+            onChange: (next) => set('doubaoSearchMode', next),
+          }),
+        }),
+        h(KeyField, {
+          key: 'doubao-key',
+          id: 'dsh-web-search-doubao-key',
+          vendor: 'doubao',
+          label: t('doubaoKey'),
+          hint: t('doubaoKeyHint'),
+          placeholder: 'DOUBAO_API_KEY',
+          configured: configured('doubao'),
+          disabled,
+          t,
+          onSave: (next) => set('doubaoApiKey', next),
+        }),
+        h(
+          'details',
+          { key: 'doubao-endpoint', className: 'dshWebSearchDetails' },
+          h('summary', null, t('endpoint')),
+          h(TextField, {
+            value: value.doubaoBaseURL,
+            disabled,
+            onChange: (next) => set('doubaoBaseURL', next),
+          }),
+        ),
+        h(ProbeButton, { key: 'doubao-probe', id: 'doubao', ...probeProps }),
+      ]
+    }
+    if (id === 'tavily') {
+      return [
+        h(KeyField, {
+          key: 'tavily-key',
+          id: 'dsh-web-search-tavily-key',
+          vendor: 'tavily',
+          label: t('tavilyKey'),
+          hint: t('tavilyKeyHint'),
+          placeholder: 'TAVILY_API_KEY',
+          configured: configured('tavily'),
+          disabled,
+          t,
+          onSave: (next) => set('tavilyApiKey', next),
+        }),
+        h(Field, {
+          key: 'tavily-depth',
+          htmlFor: 'dsh-web-search-tavily-depth',
+          label: t('tavilyDepth'),
+          hint: t('tavilyDepthHint'),
+          children: h(SelectField, {
+            id: 'dsh-web-search-tavily-depth',
+            value: value.tavilySearchDepth,
+            disabled,
+            options: [
+              { id: 'basic', label: t('depthBasic') },
+              { id: 'advanced', label: t('depthAdvanced') },
+              { id: 'fast', label: t('depthFast') },
+              { id: 'ultra-fast', label: t('depthUltra') },
+            ],
+            onChange: (next) => set('tavilySearchDepth', next),
+          }),
+        }),
+        h(Field, {
+          key: 'tavily-extract',
+          htmlFor: 'dsh-web-search-tavily-extract',
+          label: t('tavilyExtract'),
+          hint: t('tavilyExtractHint'),
+          children: h(SelectField, {
+            id: 'dsh-web-search-tavily-extract',
+            value: value.tavilyExtractDepth ?? 'basic',
+            disabled,
+            options: [
+              { id: 'basic', label: t('depthBasic') },
+              { id: 'advanced', label: t('depthAdvanced') },
+            ],
+            onChange: (next) => set('tavilyExtractDepth', next),
+          }),
+        }),
+        h(
+          'details',
+          { key: 'tavily-endpoint', className: 'dshWebSearchDetails' },
+          h('summary', null, t('endpoint')),
+          h(TextField, {
+            value: value.tavilyBaseURL,
+            disabled,
+            onChange: (next) => set('tavilyBaseURL', next),
+          }),
+        ),
+        h(ProbeButton, { key: 'tavily-probe', id: 'tavily', ...probeProps }),
+      ]
+    }
+    return [
+      h('p', { key: 'exa-note', className: 'dshWebSearchPanel-note' }, t('exaNote')),
+      h(KeyField, {
+        key: 'exa-key',
+        id: 'dsh-web-search-exa-key',
+        vendor: 'exa',
+        label: t('exaKey'),
+        hint: t('exaKeyHint'),
+        placeholder: 'EXA_API_KEY',
+        configured: configured('exa'),
+        disabled,
+        t,
+        onSave: (next) => set('exaApiKey', next),
+      }),
+      h(Field, {
+        key: 'exa-type',
+        htmlFor: 'dsh-web-search-exa-type',
+        label: t('exaType'),
+        hint: t('exaTypeHint'),
+        children: h(SelectField, {
+          id: 'dsh-web-search-exa-type',
+          value: value.exaSearchType,
+          disabled,
+          options: [
+            { id: 'auto', label: t('typeAuto') },
+            { id: 'keyword', label: t('typeKeyword') },
+            { id: 'neural', label: t('typeNeural') },
+          ],
+          onChange: (next) => set('exaSearchType', next),
+        }),
+      }),
+      h(
+        'details',
+        { key: 'exa-endpoint', className: 'dshWebSearchDetails' },
+        h('summary', null, t('endpoint')),
+        h(TextField, {
+          value: value.exaBaseURL,
+          disabled,
+          onChange: (next) => set('exaBaseURL', next),
+        }),
+        h(Field, {
+          htmlFor: 'dsh-web-search-exa-provider',
+          label: t('exaProviderId'),
+          hint: t('exaProviderIdHint'),
+          children: h(TextField, {
+            id: 'dsh-web-search-exa-provider',
+            value: value.exaProviderId,
+            disabled,
+            onChange: (next) => set('exaProviderId', next),
+          }),
+        }),
+      ),
+      h(ProbeButton, { key: 'exa-probe', id: 'exa', ...probeProps }),
+    ]
+  }
 
   return h(
     'div',
@@ -400,6 +699,9 @@ export function SearchCard(props: SearchCardProps) {
       ),
     ),
     h('p', { className: 'dshWebSearchField-hint dshWebSearchSummary-hint' }, t('customSearchHint')),
+    custom && !anyConfigured
+      ? h('p', { key: 'keys-hint', className: 'dshWebSearchField-hint dshWebSearchKeys-hint' }, t('keysHint'))
+      : null,
     custom
       ? [
           h(Field, {
@@ -413,7 +715,7 @@ export function SearchCard(props: SearchCardProps) {
               options: PROVIDER_OPTIONS.map((option) => ({ id: option.id, label: t(option.labelKey) })),
               onChange: (next) => {
                 set('searchProvider', next as SearchProviderChoice)
-                if (next !== 'auto') setOpenId(next as ProviderId)
+                if (next !== 'auto') setSelectedTab(next as ProviderId)
               },
             }),
           }),
@@ -429,265 +731,19 @@ export function SearchCard(props: SearchCardProps) {
               onChange: (next) => set('fetchProvider', next as FetchProviderChoice),
             }),
           }),
-          h('div', { key: 'keys-label', className: 'dshWebSearchKeys' }, t('keysHeading')),
           h(
-            'div',
-            { key: 'list', className: 'dshWebSearchList' },
-            h(ProviderCard, {
-              title: t('baidu'),
-              description: t('baiduDesc'),
-              badge: badgeOf('baidu'),
-              kind: kindOf('baidu'),
-              open: open === 'baidu',
-              onToggle: () => toggle('baidu'),
-              children: [
-                h(Field, {
-                  key: 'baidu-mode',
-                  label: t('baiduMode'),
-                  hint: t('baiduModeHint'),
-                  children: h(Seg, {
-                    value: value.baiduSearchMode === 'ai' ? 'ai' : 'web',
-                    disabled,
-                    label: t('baiduMode'),
-                    options: [
-                      { id: 'web', label: t('baiduModeWeb') },
-                      { id: 'ai', label: t('baiduModeAi') },
-                    ],
-                    onChange: (next) => set('baiduSearchMode', next),
-                  }),
-                }),
-                value.baiduSearchMode === 'ai'
-                  ? h('p', { key: 'baidu-note', className: 'dshWebSearchCard-note' }, t('baiduNote'))
-                  : null,
-                h(Field, {
-                  key: 'baidu-key',
-                  label: t('baiduKey'),
-                  hint: t('baiduKeyHint'),
-                  children: h(SecretField, {
-                    configured: configured('baidu'),
-                    savedLabel: t('saved'),
-                    placeholder: 'BAIDU_API_KEY',
-                    disabled,
-                    onSave: (next) => set('baiduApiKey', next),
-                  }),
-                }),
-                value.baiduSearchMode === 'ai'
-                  ? h(Field, {
-                    key: 'baidu-model',
-                    label: t('baiduModel'),
-                    hint: t('baiduModelHint'),
-                    children: h(TextField, {
-                      value: value.baiduModel,
-                      disabled,
-                      onChange: (next) => set('baiduModel', next),
-                    }),
-                  })
-                  : null,
-                h(
-                  'details',
-                  { key: 'baidu-endpoint', className: 'dshWebSearchDetails' },
-                  h('summary', null, t('endpoint')),
-                  h(TextField, {
-                    value: value.baiduBaseURL,
-                    disabled,
-                    onChange: (next) => set('baiduBaseURL', next),
-                  }),
-                ),
-                h(ProbeButton, {
-                  key: 'baidu-probe',
-                  id: 'baidu',
-                  configured: configured('baidu'),
-                  disabled,
-                  t,
-                  onDone: refresh,
-                }),
-              ],
-            }),
-            h(ProviderCard, {
-              title: t('doubao'),
-              description: t('doubaoDesc'),
-              badge: badgeOf('doubao'),
-              kind: kindOf('doubao'),
-              open: open === 'doubao',
-              onToggle: () => toggle('doubao'),
-              children: [
-                h(Field, {
-                  key: 'doubao-key',
-                  label: t('doubaoKey'),
-                  hint: t('doubaoKeyHint'),
-                  children: h(SecretField, {
-                    configured: configured('doubao'),
-                    savedLabel: t('saved'),
-                    placeholder: 'ARK_API_KEY',
-                    disabled,
-                    onSave: (next) => set('doubaoApiKey', next),
-                  }),
-                }),
-                h(Field, {
-                  key: 'doubao-model',
-                  label: t('doubaoModel'),
-                  hint: t('doubaoModelHint'),
-                  children: h(TextField, {
-                    value: value.doubaoModel,
-                    disabled,
-                    onChange: (next) => set('doubaoModel', next),
-                  }),
-                }),
-                h(
-                  'details',
-                  { key: 'doubao-endpoint', className: 'dshWebSearchDetails' },
-                  h('summary', null, t('endpoint')),
-                  h(TextField, {
-                    value: value.doubaoBaseURL,
-                    disabled,
-                    onChange: (next) => set('doubaoBaseURL', next),
-                  }),
-                ),
-                h(ProbeButton, {
-                  key: 'doubao-probe',
-                  id: 'doubao',
-                  configured: configured('doubao'),
-                  disabled,
-                  t,
-                  onDone: refresh,
-                }),
-              ],
-            }),
-            h(ProviderCard, {
-              title: t('tavily'),
-              description: t('tavilyDesc'),
-              badge: badgeOf('tavily'),
-              kind: kindOf('tavily'),
-              open: open === 'tavily',
-              onToggle: () => toggle('tavily'),
-              children: [
-                h(Field, {
-                  key: 'tavily-key',
-                  label: t('tavilyKey'),
-                  hint: t('tavilyKeyHint'),
-                  children: h(SecretField, {
-                    configured: configured('tavily'),
-                    savedLabel: t('saved'),
-                    placeholder: 'TAVILY_API_KEY',
-                    disabled,
-                    onSave: (next) => set('tavilyApiKey', next),
-                  }),
-                }),
-                h(Field, {
-                  key: 'tavily-depth',
-                  label: t('tavilyDepth'),
-                  hint: t('tavilyDepthHint'),
-                  children: h(SelectField, {
-                    value: value.tavilySearchDepth,
-                    disabled,
-                    options: [
-                      { id: 'basic', label: t('depthBasic') },
-                      { id: 'advanced', label: t('depthAdvanced') },
-                      { id: 'fast', label: t('depthFast') },
-                      { id: 'ultra-fast', label: t('depthUltra') },
-                    ],
-                    onChange: (next) => set('tavilySearchDepth', next),
-                  }),
-                }),
-                h(Field, {
-                  key: 'tavily-extract',
-                  label: t('tavilyExtract'),
-                  hint: t('tavilyExtractHint'),
-                  children: h(SelectField, {
-                    value: value.tavilyExtractDepth ?? 'basic',
-                    disabled,
-                    options: [
-                      { id: 'basic', label: t('depthBasic') },
-                      { id: 'advanced', label: t('depthAdvanced') },
-                    ],
-                    onChange: (next) => set('tavilyExtractDepth', next),
-                  }),
-                }),
-                h(
-                  'details',
-                  { key: 'tavily-endpoint', className: 'dshWebSearchDetails' },
-                  h('summary', null, t('endpoint')),
-                  h(TextField, {
-                    value: value.tavilyBaseURL,
-                    disabled,
-                    onChange: (next) => set('tavilyBaseURL', next),
-                  }),
-                ),
-                h(ProbeButton, {
-                  key: 'tavily-probe',
-                  id: 'tavily',
-                  configured: configured('tavily'),
-                  disabled,
-                  t,
-                  onDone: refresh,
-                }),
-              ],
-            }),
-            h(ProviderCard, {
-              title: t('exa'),
-              description: t('exaDesc'),
-              badge: badgeOf('exa'),
-              kind: kindOf('exa'),
-              open: open === 'exa',
-              onToggle: () => toggle('exa'),
-              children: [
-                h('p', { key: 'exa-note', className: 'dshWebSearchCard-note' }, t('exaNote')),
-                h(Field, {
-                  key: 'exa-key',
-                  label: t('exaKey'),
-                  hint: t('exaKeyHint'),
-                  children: h(SecretField, {
-                    configured: configured('exa'),
-                    savedLabel: t('saved'),
-                    placeholder: 'EXA_API_KEY',
-                    disabled,
-                    onSave: (next) => set('exaApiKey', next),
-                  }),
-                }),
-                h(Field, {
-                  key: 'exa-type',
-                  label: t('exaType'),
-                  hint: t('exaTypeHint'),
-                  children: h(SelectField, {
-                    value: value.exaSearchType,
-                    disabled,
-                    options: [
-                      { id: 'auto', label: t('typeAuto') },
-                      { id: 'keyword', label: t('typeKeyword') },
-                      { id: 'neural', label: t('typeNeural') },
-                    ],
-                    onChange: (next) => set('exaSearchType', next),
-                  }),
-                }),
-                h(
-                  'details',
-                  { key: 'exa-endpoint', className: 'dshWebSearchDetails' },
-                  h('summary', null, t('endpoint')),
-                  h(TextField, {
-                    value: value.exaBaseURL,
-                    disabled,
-                    onChange: (next) => set('exaBaseURL', next),
-                  }),
-                  h(Field, {
-                    label: t('exaProviderId'),
-                    hint: t('exaProviderIdHint'),
-                    children: h(TextField, {
-                      value: value.exaProviderId,
-                      disabled,
-                      onChange: (next) => set('exaProviderId', next),
-                    }),
-                  }),
-                ),
-                h(ProbeButton, {
-                  key: 'exa-probe',
-                  id: 'exa',
-                  configured: configured('exa'),
-                  disabled,
-                  t,
-                  onDone: refresh,
-                }),
-              ],
-            }),
+            EngineTabs,
+            {
+              key: 'tabs',
+              selected,
+              disabled,
+              t,
+              badgeOf,
+              kindOf,
+              panelRef,
+              onSelect: (id) => setSelectedTab(id),
+              children: vendorPanel(selected),
+            },
           ),
           h(
             'details',

@@ -1,104 +1,102 @@
 import type { WebSearchProvider, WebSearchRequest, WebSearchResult, WebSearchSource } from '@deepseek-ai/dsh-web'
-import type { Config } from './config.ts'
-import { firstNonEmpty } from './errors.ts'
+import { doubaoBaseUrlOf, doubaoSearchModeOf, type Config } from './config.ts'
+import { firstNonEmpty, toIsoDate } from './errors.ts'
 import { hitResultCap } from './urls.ts'
 import { postJson } from './http.ts'
 import { isSelected, type ResolvedSecrets } from './select.ts'
 
 export const DOUBAO_PROVIDER_ID = 'doubao'
+export const DOUBAO_CUSTOM_PATH = '/search_api/web_search'
+export const DOUBAO_GLOBAL_PATH = '/search_api/global_search'
+export const DOUBAO_CUSTOM_COUNT_MAX = 50
+export const DOUBAO_GLOBAL_COUNT_MAX = 20
+export const DOUBAO_QUERY_MAX = 100
+const TRAFFIC_TAG = 'dsh_web_search'
 
-export interface DoubaoAnnotation {
-  type?: string
-  title?: string
-  url?: string
-  url_citation?: {
-    title?: string
-    url?: string
-    site_name?: string
-  }
+export interface DoubaoCustomWebResult {
+  Title?: string
+  Url?: string
+  Snippet?: string
+  Summary?: string
+  Content?: string
+  PublishTime?: string
+  SiteName?: string
 }
 
-export interface DoubaoContentPart {
-  type?: string
-  text?: string
-  output_text?: string
-  annotations?: DoubaoAnnotation[]
+export interface DoubaoGlobalSnippet {
+  Type?: string
+  Text?: string
 }
 
-export interface DoubaoOutputItem {
-  type?: string
-  content?: DoubaoContentPart[] | string
-  annotations?: DoubaoAnnotation[]
-  action?: {
-    query?: string
-    sources?: Array<{ url?: string; title?: string; snippet?: string }>
-  }
+export interface DoubaoGlobalDocument {
+  Url?: string
+  Title?: string
+  Snippet?: DoubaoGlobalSnippet[]
+  DocumentInfo?: { PublishTime?: string }
+  HostInfo?: { Hostname?: string }
 }
 
 export interface DoubaoSearchResponse {
-  output?: DoubaoOutputItem[]
-  output_text?: string
+  Result?: {
+    ResultCount?: number
+    TotalDocCount?: number
+    WebResults?: DoubaoCustomWebResult[]
+    Documents?: DoubaoGlobalDocument[]
+  }
 }
 
-export function mapDoubaoAnnotation(ann: DoubaoAnnotation): WebSearchSource | undefined {
-  if (ann.type != null && ann.type !== 'url_citation') return undefined
-  const nested = ann.url_citation ?? {}
-  const url = firstNonEmpty(ann.url, nested.url)
-  if (url.length === 0) return undefined
-  const title = firstNonEmpty(ann.title, nested.title, nested.site_name)
+export function truncateDoubaoQuery(query: string, maxChars = DOUBAO_QUERY_MAX): string {
+  return query.length <= maxChars ? query : query.slice(0, maxChars)
+}
+
+function sourceFrom(
+  url: string | undefined,
+  title?: string,
+  snippet?: string,
+  publishedAt?: string,
+): WebSearchSource | undefined {
+  const href = url?.trim()
+  if (href == null || href.length === 0) return undefined
+  const iso = toIsoDate(publishedAt)
   return {
-    url,
-    ...(title.length > 0 ? { title } : {}),
+    url: href,
+    ...(title != null && title.trim().length > 0 ? { title: title.trim() } : {}),
+    ...(snippet != null && snippet.trim().length > 0 ? { snippet: snippet.trim() } : {}),
+    ...(iso === undefined ? {} : { publishedAt: iso }),
   }
+}
+
+export function mapDoubaoCustomResults(results: DoubaoCustomWebResult[]): WebSearchSource[] {
+  return results
+    .map((item) => sourceFrom(
+      item.Url,
+      item.Title,
+      firstNonEmpty(item.Summary, item.Snippet, item.Content),
+      item.PublishTime,
+    ))
+    .filter((source): source is WebSearchSource => source !== undefined)
+}
+
+export function mapDoubaoGlobalDocuments(documents: DoubaoGlobalDocument[]): WebSearchSource[] {
+  return documents
+    .map((item) => {
+      const snippet = (item.Snippet ?? [])
+        .filter((part) => part.Type == null || part.Type === 'text')
+        .map((part) => part.Text ?? '')
+        .join('\n')
+      return sourceFrom(item.Url, item.Title, snippet, item.DocumentInfo?.PublishTime)
+    })
+    .filter((source): source is WebSearchSource => source !== undefined)
 }
 
 export function mapDoubaoResponse(
   response: DoubaoSearchResponse,
   maxResults?: number,
 ): WebSearchResult {
-  const texts: string[] = []
-  const sources: WebSearchSource[] = []
-  const seen = new Set<string>()
-
-  const pushSource = (source: WebSearchSource | undefined) => {
-    if (source === undefined || seen.has(source.url)) return
-    seen.add(source.url)
-    sources.push(source)
-  }
-
-  if (response.output_text != null && response.output_text.trim().length > 0) {
-    texts.push(response.output_text.trim())
-  }
-
-  for (const item of response.output ?? []) {
-    if (item.type === 'web_search_call') {
-      for (const source of item.action?.sources ?? []) {
-        const url = source.url?.trim()
-        if (url == null || url.length === 0) continue
-        pushSource({
-          url,
-          ...(source.title != null && source.title.trim().length > 0 ? { title: source.title.trim() } : {}),
-          ...(source.snippet != null && source.snippet.trim().length > 0 ? { snippet: source.snippet.trim() } : {}),
-        })
-      }
-    }
-
-    if (typeof item.content === 'string' && item.content.trim().length > 0) {
-      texts.push(item.content.trim())
-    }
-
-    const parts = Array.isArray(item.content) ? item.content : []
-    for (const part of parts) {
-      const text = firstNonEmpty(part.text, part.output_text)
-      if (text.length > 0) texts.push(text)
-      for (const ann of part.annotations ?? []) pushSource(mapDoubaoAnnotation(ann))
-    }
-    for (const ann of item.annotations ?? []) pushSource(mapDoubaoAnnotation(ann))
-  }
-
-  const content = texts.find((text) => text.length > 0)
+  const custom = mapDoubaoCustomResults(response.Result?.WebResults ?? [])
+  const global = mapDoubaoGlobalDocuments(response.Result?.Documents ?? [])
+  const sources = custom.length > 0 ? custom : global
   return {
-    ...(content === undefined ? {} : { content }),
     sources,
     truncated: hitResultCap(sources.length, maxResults),
   }
@@ -118,20 +116,40 @@ export class DoubaoSearchProvider implements WebSearchProvider {
 
   async search(request: WebSearchRequest, signal?: AbortSignal): Promise<WebSearchResult> {
     const { config, secrets } = this.resolve()
-    const limit = request.maxResults ?? 10
-    const payload = await postJson(
-      'Doubao',
-      `${config.doubaoBaseURL.replace(/\/$/, '')}/responses`,
-      { authorization: `Bearer ${secrets.doubaoApiKey}` },
-      {
-        model: config.doubaoModel,
-        stream: false,
-        thinking: { type: 'disabled' },
-        tools: [{ type: 'web_search', max_keyword: 2, limit }],
-        input: [{ role: 'user', content: [{ type: 'input_text', text: request.query }] }],
-      },
-      signal,
-    )
-    return mapDoubaoResponse(payload as DoubaoSearchResponse, limit)
+    const mode = doubaoSearchModeOf(config)
+    const topKMax = mode === 'global' ? DOUBAO_GLOBAL_COUNT_MAX : DOUBAO_CUSTOM_COUNT_MAX
+    const topK = Math.min(topKMax, Math.max(1, request.maxResults ?? 10))
+    const query = truncateDoubaoQuery(request.query)
+    const base = doubaoBaseUrlOf(config)
+    const headers = {
+      authorization: `Bearer ${secrets.doubaoApiKey}`,
+      'X-Traffic-Tag': TRAFFIC_TAG,
+    }
+    const payload = mode === 'global'
+      ? await postJson(
+        'Doubao',
+        `${base}${DOUBAO_GLOBAL_PATH}`,
+        headers,
+        {
+          Query: query,
+          DocCount: topK,
+          MaxSnippetLength: 1000,
+          MaxImageCountPerDoc: 0,
+        },
+        signal,
+      )
+      : await postJson(
+        'Doubao',
+        `${base}${DOUBAO_CUSTOM_PATH}`,
+        headers,
+        {
+          Query: query,
+          SearchType: 'web',
+          Count: topK,
+          NeedSummary: true,
+        },
+        signal,
+      )
+    return mapDoubaoResponse(payload as DoubaoSearchResponse, topK)
   }
 }

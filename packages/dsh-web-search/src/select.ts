@@ -1,4 +1,4 @@
-import { AUTO_FETCH_ORDER, AUTO_PROVIDER_ORDER, baiduSearchModeOf, type Config } from './config.ts'
+import { AUTO_FETCH_ORDER, AUTO_PROVIDER_ORDER, baiduSearchModeOf, doubaoBaseUrlOf, type Config } from './config.ts'
 import type { EnvLookup } from './env.ts'
 import { firstEnv } from './env.ts'
 import { firstNonEmpty, isPositiveInteger, isValidBaseUrl } from './errors.ts'
@@ -21,7 +21,7 @@ export interface ResolvedSecrets {
 
 export const SECRET_ENVS: Record<keyof ResolvedSecrets, readonly string[]> = {
   baiduApiKey: ['BAIDU_API_KEY', 'QIANFAN_API_KEY'],
-  doubaoApiKey: ['DOUBAO_API_KEY', 'ARK_API_KEY'],
+  doubaoApiKey: ['DOUBAO_API_KEY', 'DOUBAO_SEARCH_API_KEY', 'WEB_SEARCH_API_KEY', 'ARK_API_KEY'],
   tavilyApiKey: ['TAVILY_API_KEY'],
   exaApiKey: ['EXA_API_KEY'],
 }
@@ -70,7 +70,7 @@ export function providerEndpointReady(id: ProviderId, config: Config): boolean {
       if (baiduSearchModeOf(config) === 'ai') return config.baiduModel.trim().length > 0
       return true
     case 'doubao':
-      return isValidBaseUrl(config.doubaoBaseURL) && config.doubaoModel.trim().length > 0
+      return isValidBaseUrl(doubaoBaseUrlOf(config))
     case 'tavily':
       return isValidBaseUrl(config.tavilyBaseURL)
     case 'exa':

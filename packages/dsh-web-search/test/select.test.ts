@@ -77,6 +77,10 @@ describe('providerEndpointReady', () => {
     expect(providerEndpointReady('baidu', config({ baiduSearchMode: 'ai', baiduModel: '' }))).toBe(false)
     expect(providerEndpointReady('baidu', config({ baiduSearchMode: 'ai' }))).toBe(true)
   })
+
+  it('treats Doubao Search as ready without a model', () => {
+    expect(providerEndpointReady('doubao', config({ doubaoModel: '' }))).toBe(true)
+  })
 })
 
 describe('secret field mask', () => {

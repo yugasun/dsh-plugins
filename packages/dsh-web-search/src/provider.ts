@@ -51,7 +51,7 @@ export function missingCredential(id: ProviderId): never {
 
 export function missingAnyCredential(): never {
   throw new WebError(
-    `No search backend has an API key (TAVILY_API_KEY, BAIDU_API_KEY, ARK_API_KEY, or EXA_API_KEY). ${KEY_HINT}`,
+    `No search backend has an API key (TAVILY_API_KEY, BAIDU_API_KEY, DOUBAO_API_KEY, or EXA_API_KEY). ${KEY_HINT}`,
     'WEB_PROVIDER_CREDENTIAL_MISSING',
   )
 }

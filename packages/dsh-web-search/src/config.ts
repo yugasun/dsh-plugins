@@ -3,6 +3,7 @@ import { Schema } from './host.ts'
 import type { FetchProviderChoice, SearchProviderChoice } from './types.ts'
 
 export type BaiduSearchMode = 'web' | 'ai'
+export type DoubaoSearchMode = 'custom' | 'global'
 
 export interface Config {
   /** When false, official `web_search` stays on DSH built-in `deepseek-official`. */
@@ -17,6 +18,8 @@ export interface Config {
   baiduModel: string
   doubaoApiKey: string
   doubaoBaseURL: string
+  /** `custom` is Doubao Search Custom (Chinese, richer filters). `global` is the international index. */
+  doubaoSearchMode: DoubaoSearchMode
   doubaoModel: string
   tavilyApiKey: string
   tavilyBaseURL: string
@@ -34,7 +37,9 @@ export const SETTINGS_NS = 'dsh-web-search'
 export const BAIDU_DEFAULT_BASE_URL = 'https://qianfan.baidubce.com'
 export const BAIDU_DEFAULT_SEARCH_MODE: BaiduSearchMode = 'web'
 export const BAIDU_DEFAULT_MODEL = 'ernie-4.5-turbo-32k'
-export const DOUBAO_DEFAULT_BASE_URL = 'https://ark.cn-beijing.volces.com/api/v3'
+export const DOUBAO_DEFAULT_BASE_URL = 'https://open.feedcoopapi.com'
+export const DOUBAO_LEGACY_ARK_BASE_URL = 'https://ark.cn-beijing.volces.com/api/v3'
+export const DOUBAO_DEFAULT_SEARCH_MODE: DoubaoSearchMode = 'custom'
 export const DOUBAO_DEFAULT_MODEL = 'doubao-seed-1-6-250615'
 export const TAVILY_DEFAULT_BASE_URL = 'https://api.tavily.com'
 export const EXA_DEFAULT_BASE_URL = 'https://api.exa.ai'
@@ -57,6 +62,9 @@ export const Config: SchemaType<Config> = Schema.object({
   baiduModel: Schema.string().default(BAIDU_DEFAULT_MODEL),
   doubaoApiKey: Schema.string().role('secret').default(''),
   doubaoBaseURL: Schema.string().default(DOUBAO_DEFAULT_BASE_URL),
+  doubaoSearchMode: Schema.union(['custom', 'global'] as const).default(DOUBAO_DEFAULT_SEARCH_MODE).description(
+    'custom is Doubao Search Custom (Chinese, richer filters). global is the international index.',
+  ),
   doubaoModel: Schema.string().default(DOUBAO_DEFAULT_MODEL),
   tavilyApiKey: Schema.string().role('secret').default(''),
   tavilyBaseURL: Schema.string().default(TAVILY_DEFAULT_BASE_URL),
@@ -79,6 +87,7 @@ export const DEFAULT_CONFIG: Config = {
   baiduModel: BAIDU_DEFAULT_MODEL,
   doubaoApiKey: '',
   doubaoBaseURL: DOUBAO_DEFAULT_BASE_URL,
+  doubaoSearchMode: DOUBAO_DEFAULT_SEARCH_MODE,
   doubaoModel: DOUBAO_DEFAULT_MODEL,
   tavilyApiKey: '',
   tavilyBaseURL: TAVILY_DEFAULT_BASE_URL,
@@ -96,4 +105,14 @@ export const AUTO_FETCH_ORDER = ['tavily', 'exa'] as const
 
 export function baiduSearchModeOf(config: Pick<Config, 'baiduSearchMode'>): BaiduSearchMode {
   return config.baiduSearchMode === 'ai' ? 'ai' : 'web'
+}
+
+export function doubaoSearchModeOf(config: Pick<Config, 'doubaoSearchMode'>): DoubaoSearchMode {
+  return config.doubaoSearchMode === 'global' ? 'global' : 'custom'
+}
+
+export function doubaoBaseUrlOf(config: Pick<Config, 'doubaoBaseURL'>): string {
+  const raw = config.doubaoBaseURL.replace(/\/$/, '')
+  if (raw.length === 0 || raw === DOUBAO_LEGACY_ARK_BASE_URL) return DOUBAO_DEFAULT_BASE_URL
+  return raw
 }
