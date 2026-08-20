@@ -1,4 +1,4 @@
-import { AUTO_FETCH_ORDER, AUTO_PROVIDER_ORDER, type Config } from './config.ts'
+import { AUTO_FETCH_ORDER, AUTO_PROVIDER_ORDER, baiduSearchModeOf, type Config } from './config.ts'
 import type { EnvLookup } from './env.ts'
 import { firstEnv } from './env.ts'
 import { firstNonEmpty, isPositiveInteger, isValidBaseUrl } from './errors.ts'
@@ -66,7 +66,9 @@ function looksLikeSecret(value: string): boolean {
 export function providerEndpointReady(id: ProviderId, config: Config): boolean {
   switch (id) {
     case 'baidu':
-      return isValidBaseUrl(config.baiduBaseURL) && config.baiduModel.trim().length > 0
+      if (!isValidBaseUrl(config.baiduBaseURL)) return false
+      if (baiduSearchModeOf(config) === 'ai') return config.baiduModel.trim().length > 0
+      return true
     case 'doubao':
       return isValidBaseUrl(config.doubaoBaseURL) && config.doubaoModel.trim().length > 0
     case 'tavily':

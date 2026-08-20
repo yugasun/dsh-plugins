@@ -9,6 +9,7 @@ export interface ClientConfig {
   fetchProvider: FetchProviderChoice
   baiduApiKey: string
   baiduBaseURL: string
+  baiduSearchMode: 'web' | 'ai'
   baiduModel: string
   doubaoApiKey: string
   doubaoBaseURL: string

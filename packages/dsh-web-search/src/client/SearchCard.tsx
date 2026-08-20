@@ -441,7 +441,24 @@ export function SearchCard(props: SearchCardProps) {
               open: open === 'baidu',
               onToggle: () => toggle('baidu'),
               children: [
-                h('p', { key: 'baidu-note', className: 'dshWebSearchCard-note' }, t('baiduNote')),
+                h(Field, {
+                  key: 'baidu-mode',
+                  label: t('baiduMode'),
+                  hint: t('baiduModeHint'),
+                  children: h(Seg, {
+                    value: value.baiduSearchMode === 'ai' ? 'ai' : 'web',
+                    disabled,
+                    label: t('baiduMode'),
+                    options: [
+                      { id: 'web', label: t('baiduModeWeb') },
+                      { id: 'ai', label: t('baiduModeAi') },
+                    ],
+                    onChange: (next) => set('baiduSearchMode', next),
+                  }),
+                }),
+                value.baiduSearchMode === 'ai'
+                  ? h('p', { key: 'baidu-note', className: 'dshWebSearchCard-note' }, t('baiduNote'))
+                  : null,
                 h(Field, {
                   key: 'baidu-key',
                   label: t('baiduKey'),
@@ -454,16 +471,18 @@ export function SearchCard(props: SearchCardProps) {
                     onSave: (next) => set('baiduApiKey', next),
                   }),
                 }),
-                h(Field, {
-                  key: 'baidu-model',
-                  label: t('baiduModel'),
-                  hint: t('baiduModelHint'),
-                  children: h(TextField, {
-                    value: value.baiduModel,
-                    disabled,
-                    onChange: (next) => set('baiduModel', next),
-                  }),
-                }),
+                value.baiduSearchMode === 'ai'
+                  ? h(Field, {
+                    key: 'baidu-model',
+                    label: t('baiduModel'),
+                    hint: t('baiduModelHint'),
+                    children: h(TextField, {
+                      value: value.baiduModel,
+                      disabled,
+                      onChange: (next) => set('baiduModel', next),
+                    }),
+                  })
+                  : null,
                 h(
                   'details',
                   { key: 'baidu-endpoint', className: 'dshWebSearchDetails' },

@@ -3,9 +3,13 @@ import { firstNonEmpty, toIsoDate } from './errors.ts'
 import { extractHttpUrls, hitResultCap } from './urls.ts'
 import { postJson } from './http.ts'
 import { isSelected, type ResolvedSecrets } from './select.ts'
-import type { Config } from './config.ts'
+import { baiduSearchModeOf, type Config } from './config.ts'
 
 export const BAIDU_PROVIDER_ID = 'baidu'
+export const BAIDU_WEB_SEARCH_PATH = '/v2/ai_search/web_search'
+export const BAIDU_AI_SEARCH_PATH = '/v2/ai_search/chat/completions'
+export const BAIDU_WEB_TOP_K_MAX = 50
+export const BAIDU_AI_TOP_K_MAX = 20
 const BAIDU_QUERY_UNITS = 72
 
 export interface BaiduReference {
@@ -86,21 +90,38 @@ export class BaiduSearchProvider implements WebSearchProvider {
 
   async search(request: WebSearchRequest, signal?: AbortSignal): Promise<WebSearchResult> {
     const { config, secrets } = this.resolve()
-    const topK = Math.min(20, Math.max(1, request.maxResults ?? 10))
-    const payload = await postJson(
-      'Baidu',
-      `${config.baiduBaseURL.replace(/\/$/, '')}/v2/ai_search/chat/completions`,
-      { authorization: `Bearer ${secrets.baiduApiKey}` },
-      {
-        messages: [{ role: 'user', content: truncateBaiduQuery(request.query) }],
-        model: config.baiduModel,
-        search_source: 'baidu_search_v2',
-        resource_type_filter: [{ type: 'web', top_k: topK }],
-        search_mode: 'required',
-        stream: false,
-      },
-      signal,
-    )
+    const mode = baiduSearchModeOf(config)
+    const topKMax = mode === 'ai' ? BAIDU_AI_TOP_K_MAX : BAIDU_WEB_TOP_K_MAX
+    const topK = Math.min(topKMax, Math.max(1, request.maxResults ?? 10))
+    const base = config.baiduBaseURL.replace(/\/$/, '')
+    const messages = [{ role: 'user', content: truncateBaiduQuery(request.query) }]
+    const headers = { authorization: `Bearer ${secrets.baiduApiKey}` }
+    const payload = mode === 'web'
+      ? await postJson(
+        'Baidu',
+        `${base}${BAIDU_WEB_SEARCH_PATH}`,
+        headers,
+        {
+          messages,
+          search_source: 'baidu_search_v2',
+          resource_type_filter: [{ type: 'web', top_k: topK }],
+        },
+        signal,
+      )
+      : await postJson(
+        'Baidu',
+        `${base}${BAIDU_AI_SEARCH_PATH}`,
+        headers,
+        {
+          messages,
+          model: config.baiduModel,
+          search_source: 'baidu_search_v2',
+          resource_type_filter: [{ type: 'web', top_k: topK }],
+          search_mode: 'required',
+          stream: false,
+        },
+        signal,
+      )
     return mapBaiduResponse(payload as BaiduSearchResponse, topK)
   }
 }

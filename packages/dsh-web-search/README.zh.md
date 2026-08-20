@@ -45,7 +45,7 @@ dsh plugin --profile web remove @yugasun/dsh-web-search
 
 | Id | 服务 | 密钥 | 说明 |
 | --- | --- | --- | --- |
-| `baidu` | 千帆智能搜索生成 | `BAIDU_API_KEY` / `QIANFAN_API_KEY` | 使用千帆模型返回总结和网页引用。知识类问题常常只有摘要、没有 `references`；此时会尝试从摘要文本里回收 `https?://` 链接。 |
+| `baidu` | 千帆[普通搜索](https://cloud.baidu.com/doc/qianfan-api/s/Wmbq4z7e5) `POST /v2/ai_search/web_search`（默认）或[智能搜索生成](https://cloud.baidu.com/doc/qianfan-api/s/Hmbu8m06u) `POST /v2/ai_search/chat/completions` | `BAIDU_API_KEY` / `QIANFAN_API_KEY` | 默认走**普通搜索**，只返回标题、链接和摘要，更快、不调模型。可在设置里切到 **AI 搜索**；该路径更慢，知识类问题常常只有摘要、没有 `references`，此时会尝试从摘要文本里回收 `https?://` 链接。 |
 | `doubao` | 火山方舟 Responses + `web_search` | `ARK_API_KEY` / `DOUBAO_API_KEY` | 需要开通联网内容插件，并填写支持该工具的模型 ID。 |
 | `tavily` | Tavily Search `POST /search` 与 Extract `POST /extract` | `TAVILY_API_KEY` | 带摘要和可选 answer。可作为 `web_fetch` 后端。 |
 | `exa` | Exa Search `POST /search` 与 Contents `POST /contents` | `EXA_API_KEY` | 搜索**只返回链接，没有 answer**。默认 id 为 `exa`；若同时安装了官方 Exa 包，请改 `exaProviderId`。可作为 `web_fetch` 后端。 |

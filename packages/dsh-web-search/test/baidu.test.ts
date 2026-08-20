@@ -70,7 +70,40 @@ describe('mapBaiduResponse', () => {
 })
 
 describe('BaiduSearchProvider.search', () => {
-  it('uses the chat completions endpoint and Bearer API key authentication', async () => {
+  const secrets = { baiduApiKey: 'baidu-api-key', doubaoApiKey: '', tavilyApiKey: '', exaApiKey: '' }
+
+  it('defaults to Qianfan web_search without a model', async () => {
+    const fetchMock = vi.fn(async () =>
+      new Response(JSON.stringify({
+        references: [{ type: 'web', url: 'https://example.com', title: 'Example', snippet: 'snippet' }],
+      }), { status: 200, headers: { 'content-type': 'application/json' } }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const provider = new BaiduSearchProvider(() => ({
+      config: { ...DEFAULT_CONFIG, searchProvider: 'baidu' },
+      secrets,
+    }))
+    const result = await provider.search({ query: '北京景点', maxResults: 3 })
+
+    expect(result.content).toBeUndefined()
+    expect(result.sources).toEqual([
+      expect.objectContaining({ url: 'https://example.com', title: 'Example', snippet: 'snippet' }),
+    ])
+    expect(fetchMock).toHaveBeenCalledOnce()
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe('https://qianfan.baidubce.com/v2/ai_search/web_search')
+    expect(init.headers).toMatchObject({ authorization: 'Bearer baidu-api-key' })
+    const body = JSON.parse(String(init.body)) as Record<string, unknown>
+    expect(body).toMatchObject({
+      search_source: 'baidu_search_v2',
+      resource_type_filter: [{ type: 'web', top_k: 3 }],
+    })
+    expect(body.model).toBeUndefined()
+    expect(body.search_mode).toBeUndefined()
+  })
+
+  it('uses chat completions when AI search is selected', async () => {
     const fetchMock = vi.fn(async () =>
       new Response(JSON.stringify({
         choices: [{ message: { content: 'summary' } }],
@@ -80,8 +113,13 @@ describe('BaiduSearchProvider.search', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     const provider = new BaiduSearchProvider(() => ({
-      config: { ...DEFAULT_CONFIG, baiduModel: 'ernie-4.5-turbo-32k', searchProvider: 'baidu' },
-      secrets: { baiduApiKey: 'baidu-api-key', doubaoApiKey: '', tavilyApiKey: '', exaApiKey: '' },
+      config: {
+        ...DEFAULT_CONFIG,
+        baiduSearchMode: 'ai',
+        baiduModel: 'ernie-4.5-turbo-32k',
+        searchProvider: 'baidu',
+      },
+      secrets,
     }))
     const result = await provider.search({ query: '北京景点', maxResults: 3 })
 

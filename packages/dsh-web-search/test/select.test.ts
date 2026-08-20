@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_CONFIG, type Config } from '../src/config.ts'
 import type { EnvLookup } from '../src/env.ts'
 import { secretCommit, secretDisplay, SECRET_MASK } from '../src/client/secret-field.ts'
-import { configuredSeamProviderId, facadeAvailable, fetchFacadeAvailable, mergeSecrets, listAvailable, pinWebSeams, pluginStatus, resolveSecrets, selectActive, selectFetchBackend } from '../src/select.ts'
+import { configuredSeamProviderId, facadeAvailable, fetchFacadeAvailable, mergeSecrets, listAvailable, pinWebSeams, pluginStatus, providerEndpointReady, resolveSecrets, selectActive, selectFetchBackend } from '../src/select.ts'
 import { credentialOverlay } from '../src/credentials.ts'
 import { PluginFetchProvider, PluginSearchProvider } from '../src/provider.ts'
 import { BUILTIN_FETCH_PROVIDER_ID, BUILTIN_SEAM_PROVIDER_ID, SEAM_PROVIDER_ID } from '../src/types.ts'
@@ -65,6 +65,17 @@ describe('selectActive', () => {
     const current = config({ baiduApiKey: 'd', tavilyApiKey: 'tvly-test-key' })
     const secrets = resolveSecrets(current, env())
     expect(selectActive(current, secrets)).toBe('tavily')
+  })
+})
+
+describe('providerEndpointReady', () => {
+  it('treats ordinary Baidu search as ready without a model', () => {
+    expect(providerEndpointReady('baidu', config({ baiduModel: '' }))).toBe(true)
+  })
+
+  it('requires a model when Baidu AI search is selected', () => {
+    expect(providerEndpointReady('baidu', config({ baiduSearchMode: 'ai', baiduModel: '' }))).toBe(false)
+    expect(providerEndpointReady('baidu', config({ baiduSearchMode: 'ai' }))).toBe(true)
   })
 })
 

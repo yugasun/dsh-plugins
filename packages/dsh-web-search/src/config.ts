@@ -2,6 +2,8 @@ import type SchemaType from '@deepseek-ai/schemastery'
 import { Schema } from './host.ts'
 import type { FetchProviderChoice, SearchProviderChoice } from './types.ts'
 
+export type BaiduSearchMode = 'web' | 'ai'
+
 export interface Config {
   /** When false, official `web_search` stays on DSH built-in `deepseek-official`. */
   customSearch: boolean
@@ -10,6 +12,8 @@ export interface Config {
   fetchProvider: FetchProviderChoice
   baiduApiKey: string
   baiduBaseURL: string
+  /** `web` is Qianfan web_search; `ai` is intelligent search generation (slower). */
+  baiduSearchMode: BaiduSearchMode
   baiduModel: string
   doubaoApiKey: string
   doubaoBaseURL: string
@@ -28,6 +32,7 @@ export interface Config {
 export const SETTINGS_NS = 'dsh-web-search'
 
 export const BAIDU_DEFAULT_BASE_URL = 'https://qianfan.baidubce.com'
+export const BAIDU_DEFAULT_SEARCH_MODE: BaiduSearchMode = 'web'
 export const BAIDU_DEFAULT_MODEL = 'ernie-4.5-turbo-32k'
 export const DOUBAO_DEFAULT_BASE_URL = 'https://ark.cn-beijing.volces.com/api/v3'
 export const DOUBAO_DEFAULT_MODEL = 'doubao-seed-1-6-250615'
@@ -46,6 +51,9 @@ export const Config: SchemaType<Config> = Schema.object({
   ),
   baiduApiKey: Schema.string().role('secret').default(''),
   baiduBaseURL: Schema.string().default(BAIDU_DEFAULT_BASE_URL),
+  baiduSearchMode: Schema.union(['web', 'ai'] as const).default(BAIDU_DEFAULT_SEARCH_MODE).description(
+    'web is Qianfan web_search (faster, links and snippets). ai is intelligent search generation (slower, model summary).',
+  ),
   baiduModel: Schema.string().default(BAIDU_DEFAULT_MODEL),
   doubaoApiKey: Schema.string().role('secret').default(''),
   doubaoBaseURL: Schema.string().default(DOUBAO_DEFAULT_BASE_URL),
@@ -67,6 +75,7 @@ export const DEFAULT_CONFIG: Config = {
   fetchProvider: 'auto',
   baiduApiKey: '',
   baiduBaseURL: BAIDU_DEFAULT_BASE_URL,
+  baiduSearchMode: BAIDU_DEFAULT_SEARCH_MODE,
   baiduModel: BAIDU_DEFAULT_MODEL,
   doubaoApiKey: '',
   doubaoBaseURL: DOUBAO_DEFAULT_BASE_URL,
@@ -84,3 +93,7 @@ export const DEFAULT_CONFIG: Config = {
 
 export const AUTO_PROVIDER_ORDER = ['baidu', 'doubao', 'tavily', 'exa'] as const
 export const AUTO_FETCH_ORDER = ['tavily', 'exa'] as const
+
+export function baiduSearchModeOf(config: Pick<Config, 'baiduSearchMode'>): BaiduSearchMode {
+  return config.baiduSearchMode === 'ai' ? 'ai' : 'web'
+}
