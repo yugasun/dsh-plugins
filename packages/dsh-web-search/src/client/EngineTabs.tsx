@@ -84,7 +84,7 @@ export function EngineTabs(props: {
     const index = tabIds.indexOf(props.selected)
     const base = index >= 0 ? index : 0
     const next = tabIds[(base + delta + tabIds.length) % tabIds.length]
-    props.onSelect(next)
+    if (next) props.onSelect(next)
   }
 
   const selectFromMore = (id: ProviderId) => {
