@@ -29,10 +29,11 @@ pnpm typecheck
 pnpm build
 ```
 
-Load a local checkout into the web profile (needs the `pnpm install` above; a `link:` install resolves host packages from this tree):
+Load a local checkout into a profile (needs the `pnpm install` above. Relative paths resolve against the **profile directory**, not cwd):
 
 ```sh
 dsh plugin --profile web add "$PWD/packages/dsh-web-search"
+dsh plugin --profile desktop add "$PWD/packages/dsh-web-search"
 dsh --profile web --dump-config | grep dsh-web-search
 ```
 

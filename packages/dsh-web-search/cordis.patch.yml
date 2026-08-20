@@ -6,14 +6,9 @@
 # `id` is the Cordis fiber / settings identity (unscoped). `name` is the npm
 # specifier Cordis actually imports — it must match package.json "name".
 #
-# A later patch replaces a targeted row's whole `config`. The base layer pins
-# official web_search to `deepseek-official`; retarget it at this plugin's
-# facade so custom backends can run. The settings toggle `customSearch` retargets
-# `ctx.web.searchProviderId` at runtime (`dsh-web-search` vs `deepseek-official`).
-- id: web
-  config:
-    searchProvider: dsh-web-search
-
+# This file must stay a plain insert (id + name only). dshmarket hot-mount
+# cannot apply config or expression rows. `apply()` retargets
+# `ctx.web.searchProviderId` / `fetchProviderId` via pinWebSeams.
 - insert:
     - id: dsh-web-search
       name: '@yugasun/dsh-web-search'

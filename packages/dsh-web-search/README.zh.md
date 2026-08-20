@@ -18,11 +18,12 @@
 dsh plugin --profile web add @yugasun/dsh-web-search
 ```
 
-从本仓库本地路径（`dsh plugin add` 会 `link` 到源码，Node 从源码目录解析 `@deepseek-ai/*`。必须先在仓库根目录执行 `pnpm install`，让 `packages/dsh-web-search/node_modules` 里有这些 peer）：
+从本仓库本地路径（`dsh plugin add` 会 `link` 到源码，Node 从源码目录解析 `@deepseek-ai/*`。必须先在仓库根目录执行 `pnpm install`。相对路径是相对 **profile 目录** 解析的，请用 `$PWD` 绝对路径）：
 
 ```sh
 pnpm install
-dsh plugin --profile web add ./packages/dsh-web-search
+dsh plugin --profile web add "$PWD/packages/dsh-web-search"
+dsh plugin --profile desktop add "$PWD/packages/dsh-web-search"
 ```
 
 安装后请重启 `dsh web`。设置侧栏会出现 **网络搜索** 页。关闭 **自定义搜索** 则继续用 DSH 内置 `web_search` 和 `web_fetch`；开启后配置百度 / 豆包 / Tavily / Exa。**网页提取** 与搜索独立：自动跟随 Tavily/Exa 搜索，或固定 Tavily Extract、Exa Contents、DSH `http`。

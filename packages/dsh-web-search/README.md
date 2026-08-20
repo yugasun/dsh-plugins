@@ -18,11 +18,12 @@ From npm:
 dsh plugin --profile web add @yugasun/dsh-web-search
 ```
 
-From a clone of this monorepo (`dsh plugin add` `link`s the source tree, so Node resolves `@deepseek-ai/*` from this package. Run `pnpm install` at the repo root first so those peers exist under `packages/dsh-web-search/node_modules`):
+From a clone of this monorepo (`dsh plugin add` `link`s the source tree, so Node resolves `@deepseek-ai/*` from this package. Run `pnpm install` at the repo root first. Relative paths resolve against the **profile directory**, not your cwd — use `$PWD`):
 
 ```sh
 pnpm install
-dsh plugin --profile web add ./packages/dsh-web-search
+dsh plugin --profile web add "$PWD/packages/dsh-web-search"
+dsh plugin --profile desktop add "$PWD/packages/dsh-web-search"
 ```
 
 Restart `dsh web`. Settings has a **Web search** page. Turn **Custom search** off to keep DSH built-in `web_search` (`deepseek-official`) and `web_fetch` (`http`); turn it on to use Baidu / Doubao / Tavily / Exa. **Page extract** is independent: auto follows Tavily/Exa search, or pin Tavily Extract, Exa Contents, or DSH `http`.
