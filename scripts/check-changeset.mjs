@@ -62,8 +62,8 @@ function main() {
     changedFiles,
     packageDirs: findPublishablePackageDirs(),
     headRef: process.env.GITHUB_HEAD_REF || '',
-    headRepository: process.env.GITHUB_HEAD_REPOSITORY || '',
-    repository: process.env.GITHUB_REPOSITORY || '',
+    headRepository: process.env.RELEASE_HEAD_REPOSITORY || '',
+    repository: process.env.RELEASE_BASE_REPOSITORY || '',
   })
 
   if (!result.required) {
