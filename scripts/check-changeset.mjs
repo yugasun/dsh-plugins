@@ -43,7 +43,7 @@ function main() {
   const baseRef = `origin/${process.env.GITHUB_BASE_REF || 'main'}`
   const changedFiles = execFileSync(
     'git',
-    ['diff', '--name-only', '--diff-filter=ACMR', `${baseRef}...HEAD`],
+    ['diff', '--name-only', '--diff-filter=ACMRD', `${baseRef}...HEAD`],
     { encoding: 'utf8' },
   ).trim().split('\n').filter(Boolean)
 
