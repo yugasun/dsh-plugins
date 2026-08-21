@@ -47,7 +47,7 @@ Choose `patch` for a backward-compatible fix, `minor` for a backward-compatible 
 
 PR CI requires a Changeset whenever a publishable package changes. After the PR merges to `main`, GitHub Actions creates or updates one `Version Packages` PR. Merging that PR applies the version bumps and publishes all pending packages through npm Trusted Publishing/OIDC, with GitHub releases and tags. Normal releases do not require local npm authentication, npm tokens, or 2FA.
 
-To inspect a package artifact without publishing it, use `pnpm --filter <package> pack --dry-run`. The tarball must contain `lib/index.js`, `client/client.js`, `cordis.patch.yml`, and `LICENSE`. Built `lib/` and `client/*.js` are gitignored; `prepublishOnly` builds them before publication. Keep `prepare` so Git installs still compile.
+To inspect a package artifact without publishing it, use `pnpm --filter <package> pack --dry-run`. Check the tarball against that package's `files`, `main`, `exports`, bundle metadata, and license; packages may have different artifact layouts. The release workflow's `pack` job runs the root `pnpm build` across packages before Changesets packs the artifacts. Keep each package's build and lifecycle scripts, such as `prepare` or `prepublishOnly`, as applicable for local installs and packaging.
 
 Adding a new package requires a one-time initial npm publication and Trusted Publisher binding for `.github/workflows/release.yml`; ask a maintainer to perform that bootstrap. Later releases use the automated flow above.
 
@@ -82,6 +82,6 @@ pnpm check
 
 PR CI 会检查可发布包的变更是否包含 Changeset。PR 合入 `main` 后，GitHub Actions 会创建或更新一个 `Version Packages` PR。合入该 PR 后，所有待发布的包会通过 npm Trusted Publishing/OIDC 自动更新版本并发布，同时创建 GitHub release 和 tag。正常发布不需要本地 npm 身份认证、npm token 或 2FA。
 
-要在本地检查包产物但不发布，使用 `pnpm --filter <package> pack --dry-run`。tarball 必须包含 `lib/index.js`、`client/client.js`、`cordis.patch.yml` 和 `LICENSE`。构建产物 `lib/`、`client/*.js` 被 gitignore；发布前 `prepublishOnly` 会构建它们。保留 `prepare`，以便从 Git 安装时仍能编译。
+要在本地检查包产物但不发布，使用 `pnpm --filter <package> pack --dry-run`。根据对应包的 `files`、`main`、`exports`、bundle 元数据和许可证检查 tarball；不同包的产物布局可以不同。发布工作流的 `pack` job 会先在所有包上运行根目录的 `pnpm build`，再由 Changesets 打包产物。各包的 `build` 以及 `prepare`、`prepublishOnly` 等生命周期脚本按需保留，用于本地安装和打包。
 
 新增包需要一次性的初始 npm 发布，并为 `.github/workflows/release.yml` 配置 Trusted Publisher；请维护者协助完成这次初始化。之后即可使用上述自动发布流程。
