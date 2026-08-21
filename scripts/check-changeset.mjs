@@ -4,8 +4,19 @@ import { pathToFileURL } from 'node:url'
 
 const CHANGESET_FILE = /^\.changeset\/(?!README\.md$)[^/]+\.md$/
 
-export function classifyChangesetRequirement({ changedFiles, packageDirs, headRef }) {
-  if (headRef === 'changeset-release/main') {
+export function classifyChangesetRequirement({
+  changedFiles,
+  packageDirs,
+  headRef,
+  headRepository,
+  repository,
+}) {
+  if (
+    headRef === 'changeset-release/main'
+    && headRepository
+    && repository
+    && headRepository === repository
+  ) {
     return { required: false, reason: 'generated release pull request' }
   }
 
@@ -51,6 +62,8 @@ function main() {
     changedFiles,
     packageDirs: findPublishablePackageDirs(),
     headRef: process.env.GITHUB_HEAD_REF || '',
+    headRepository: process.env.GITHUB_HEAD_REPOSITORY || '',
+    repository: process.env.GITHUB_REPOSITORY || '',
   })
 
   if (!result.required) {

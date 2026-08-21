@@ -62,7 +62,22 @@ test('exempts the generated Version Packages PR', () => {
       changedFiles: ['packages/dsh-web-search/package.json'],
       packageDirs,
       headRef: 'changeset-release/main',
+      headRepository: 'yugasun/dsh-plugins',
+      repository: 'yugasun/dsh-plugins',
     }),
     { required: false, reason: 'generated release pull request' },
+  )
+})
+
+test('does not exempt a fork branch named changeset-release/main', () => {
+  assert.deepEqual(
+    classifyChangesetRequirement({
+      changedFiles: ['packages/dsh-web-search/package.json'],
+      packageDirs,
+      headRef: 'changeset-release/main',
+      headRepository: 'contributor/dsh-plugins',
+      repository: 'yugasun/dsh-plugins',
+    }),
+    { required: true, hasChangeset: false, changedPackages: ['dsh-web-search'] },
   )
 })
