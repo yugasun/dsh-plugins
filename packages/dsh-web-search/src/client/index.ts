@@ -1,6 +1,6 @@
 import { createElement as h } from 'react'
 import { en, zh } from './locales.ts'
-import type { ClientConfig } from './model.ts'
+import type { ClientConfig, SettingsScope } from './model.ts'
 import { watchSettingsNavIcon } from './nav-icon.ts'
 import { SearchPage } from './SearchPage.tsx'
 import { ensureSearchStyles } from './styles.ts'
@@ -13,11 +13,7 @@ interface LocaleService {
 }
 
 interface SettingsScopeBinder {
-  bind<T>(spec: { namespace: string }): {
-    getSnapshot(): { status: string; value: T | undefined; writable: boolean }
-    subscribe(listener: () => void): () => void
-    set(field: string, value: unknown): Promise<void>
-  }
+  bind<T>(spec: { namespace: string }): SettingsScope<T>
 }
 
 interface SlotsService {

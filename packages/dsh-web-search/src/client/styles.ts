@@ -1,4 +1,4 @@
-const TAG_ID = 'dsh-web-search/web-ui.v5.css'
+const TAG_ID = 'dsh-web-search/web-ui.v6.css'
 
 const CSS = `
 .dshWebSearchPage {
@@ -458,6 +458,34 @@ const CSS = `
   font-weight: 500;
   color: var(--dsw-static-green-450, #34d399);
 }
+.dshWebSearchSecret-clear {
+  appearance: none;
+  margin: 0;
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+  min-height: 36px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.dshWebSearchSecret-clear:hover:not(:disabled) {
+  color: var(--dsw-alias-label-primary);
+  background: var(--dsw-alias-interactive-bg-hover, color-mix(in srgb, currentColor 8%, transparent));
+}
+.dshWebSearchSecret-clear:focus-visible {
+  outline: 2px solid var(--dsw-alias-brand-primary, var(--dsw-static-blue-450));
+  outline-offset: 2px;
+}
+.dshWebSearchSecret-clear:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
 .dshWebSearchDetails {
   display: flex;
   flex-direction: column;
@@ -558,6 +586,7 @@ const CSS = `
   .dshWebSearchTab,
   .dshWebSearchTabs-more,
   .dshWebSearchExt,
+  .dshWebSearchSecret-clear,
   .dshWebSearchProbe-btn {
     transition: none;
   }

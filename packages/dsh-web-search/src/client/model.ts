@@ -1,5 +1,5 @@
-export type SearchProviderChoice = 'auto' | 'baidu' | 'doubao' | 'tavily' | 'exa'
-export type ProviderId = 'baidu' | 'doubao' | 'tavily' | 'exa'
+export type SearchProviderChoice = 'auto' | 'baidu' | 'doubao' | 'tavily' | 'exa' | 'serper'
+export type ProviderId = 'baidu' | 'doubao' | 'tavily' | 'exa' | 'serper'
 export type FetchProviderChoice = 'auto' | 'http' | 'tavily' | 'exa'
 export type FetchProviderId = 'tavily' | 'exa'
 
@@ -24,6 +24,10 @@ export interface ClientConfig {
   exaSearchType: 'auto' | 'keyword' | 'neural'
   exaProviderId: string
   exaHighlightsPerResult: number
+  serperApiKey: string
+  serperBaseURL: string
+  serperGl: string
+  serperHl: string
 }
 
 export interface ProviderStatus {
@@ -55,6 +59,8 @@ export interface SettingsScope<T> {
   getSnapshot(): { status: string; value: T | undefined; writable: boolean }
   subscribe(listener: () => void): () => void
   set(field: string, value: unknown): Promise<void>
+  /** Drop a user-layer field so it is removed from ~/.dsh/settings.yaml. */
+  unset(field: string): Promise<void>
 }
 
 export const EMPTY_STATUS: PluginStatus = {
@@ -70,6 +76,7 @@ export const EMPTY_STATUS: PluginStatus = {
     { id: 'doubao', available: false, configured: false },
     { id: 'tavily', available: false, configured: false },
     { id: 'exa', available: false, configured: false },
+    { id: 'serper', available: false, configured: false },
   ],
 }
 
@@ -79,6 +86,7 @@ export const PROVIDER_OPTIONS: Array<{ id: SearchProviderChoice; labelKey: strin
   { id: 'doubao', labelKey: 'doubao' },
   { id: 'tavily', labelKey: 'tavily' },
   { id: 'exa', labelKey: 'exa' },
+  { id: 'serper', labelKey: 'serper' },
 ]
 
 export const FETCH_OPTIONS: Array<{ id: FetchProviderChoice; labelKey: string }> = [
@@ -88,7 +96,7 @@ export const FETCH_OPTIONS: Array<{ id: FetchProviderChoice; labelKey: string }>
   { id: 'exa', labelKey: 'exa' },
 ]
 
-export const VENDOR_ORDER: ProviderId[] = ['baidu', 'doubao', 'tavily', 'exa']
+export const VENDOR_ORDER: ProviderId[] = ['baidu', 'doubao', 'tavily', 'exa', 'serper']
 
 /** Official consoles for creating an API key. */
 export const PROVIDER_KEY_URLS: Record<ProviderId, string> = {
@@ -96,6 +104,7 @@ export const PROVIDER_KEY_URLS: Record<ProviderId, string> = {
   doubao: 'https://console.volcengine.com/search-infinity/api-key',
   tavily: 'https://app.tavily.com',
   exa: 'https://dashboard.exa.ai/api-keys',
+  serper: 'https://serper.dev/api-key',
 }
 
 export const DOUBAO_DOCS = {

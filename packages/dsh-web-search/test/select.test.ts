@@ -28,15 +28,19 @@ describe('selectActive', () => {
     expect(listAvailable(current, secrets)).toEqual([])
   })
 
-  it('auto-picks the first usable provider in Baidu → Doubao → Tavily → Exa order', () => {
-    const current = config({ tavilyApiKey: 'tvly-test-key', exaApiKey: 'exa-test-key' })
+  it('auto-picks the first usable provider in Baidu → Doubao → Tavily → Exa → Serper order', () => {
+    const current = config({
+      tavilyApiKey: 'tvly-test-key',
+      exaApiKey: 'exa-test-key',
+      serperApiKey: 'serper-test-key',
+    })
     const secrets = resolveSecrets(current, env())
     expect(selectActive(current, secrets)).toBe('tavily')
-    expect(listAvailable(current, secrets)).toEqual(['tavily', 'exa'])
+    expect(listAvailable(current, secrets)).toEqual(['tavily', 'exa', 'serper'])
   })
 
   it('honors an explicit provider even when others are keyed', () => {
-    const current = config({ searchProvider: 'exa', tavilyApiKey: 'tvly-test-key', exaApiKey: 'exa-test-key' })
+    const current = config({ searchProvider: 'exa', tavilyApiKey: 'tvly-test-key', exaApiKey: 'exa-test-key', serperApiKey: '' })
     const secrets = resolveSecrets(current, env())
     expect(selectActive(current, secrets)).toBe('exa')
   })
@@ -61,6 +65,13 @@ describe('selectActive', () => {
     })
   })
 
+  it('picks Serper last in auto order when only SERPER_API_KEY is set', () => {
+    const current = config()
+    const secrets = resolveSecrets(current, env({ SERPER_API_KEY: 'from-env' }))
+    expect(secrets.serperApiKey).toBe('from-env')
+    expect(selectActive(current, secrets)).toBe('serper')
+  })
+
   it('ignores placeholder keys that are too short, so auto can reach Tavily', () => {
     const current = config({ baiduApiKey: 'd', tavilyApiKey: 'tvly-test-key' })
     const secrets = resolveSecrets(current, env())
@@ -81,6 +92,11 @@ describe('providerEndpointReady', () => {
   it('treats Doubao Search as ready without a model', () => {
     expect(providerEndpointReady('doubao', config({ doubaoModel: '' }))).toBe(true)
   })
+
+  it('treats Serper as ready when the endpoint is a valid URL', () => {
+    expect(providerEndpointReady('serper', config())).toBe(true)
+    expect(providerEndpointReady('serper', config({ serperBaseURL: 'not-a-url' }))).toBe(false)
+  })
 })
 
 describe('secret field mask', () => {
@@ -90,9 +106,9 @@ describe('secret field mask', () => {
     expect(secretDisplay('typed', true)).toBe('typed')
   })
 
-  it('does not save the mask or an empty draft', () => {
-    expect(secretCommit('')).toEqual({ kind: 'keep' })
-    expect(secretCommit('   ')).toEqual({ kind: 'keep' })
+  it('clears an empty draft and keeps the mask', () => {
+    expect(secretCommit('')).toEqual({ kind: 'clear' })
+    expect(secretCommit('   ')).toEqual({ kind: 'clear' })
     expect(secretCommit(SECRET_MASK)).toEqual({ kind: 'keep' })
     expect(secretCommit(' tvly-new ')).toEqual({ kind: 'set', value: 'tvly-new' })
   })
@@ -101,7 +117,7 @@ describe('secret field mask', () => {
 describe('credential overlay', () => {
   it('merges credentials under settings and launch env', () => {
     const merged = mergeSecrets(
-      { baiduApiKey: '', doubaoApiKey: '', tavilyApiKey: '', exaApiKey: '' },
+      { baiduApiKey: '', doubaoApiKey: '', tavilyApiKey: '', exaApiKey: '', serperApiKey: '' },
       { tavilyApiKey: 'from-credentials' },
     )
     expect(merged.tavilyApiKey).toBe('from-credentials')
@@ -109,7 +125,7 @@ describe('credential overlay', () => {
 
   it('does not let credentials replace a settings key', () => {
     const merged = mergeSecrets(
-      { baiduApiKey: '', doubaoApiKey: '', tavilyApiKey: 'from-settings', exaApiKey: '' },
+      { baiduApiKey: '', doubaoApiKey: '', tavilyApiKey: 'from-settings', exaApiKey: '', serperApiKey: '' },
       { tavilyApiKey: 'from-credentials' },
     )
     expect(merged.tavilyApiKey).toBe('from-settings')
@@ -172,7 +188,7 @@ describe('fetch backend', () => {
   })
 
   it('pins Exa contents when Exa is explicit', () => {
-    const current = config({ searchProvider: 'exa', exaApiKey: 'exa-test-key' })
+    const current = config({ searchProvider: 'exa', exaApiKey: 'exa-test-key', serperApiKey: '' })
     const secrets = resolveSecrets(current, env())
     expect(selectFetchBackend(current, secrets)).toBe('exa')
   })
@@ -203,14 +219,14 @@ describe('fetch backend', () => {
 describe('PluginSearchProvider', () => {
   it('is available when Tavily is pinned even before the key overlay lands', () => {
     const current = config({ searchProvider: 'tavily' })
-    const empty = { baiduApiKey: '', doubaoApiKey: '', tavilyApiKey: '', exaApiKey: '' }
+    const empty = { baiduApiKey: '', doubaoApiKey: '', tavilyApiKey: '', exaApiKey: '', serperApiKey: '' }
     expect(facadeAvailable(current, empty)).toBe(true)
     expect(selectActive(current, empty)).toBeNull()
   })
 
   it('loads a credential key on search and dispatches to Tavily', async () => {
     const current = config({ searchProvider: 'tavily' })
-    let secrets = { baiduApiKey: '', doubaoApiKey: '', tavilyApiKey: '', exaApiKey: '' }
+    let secrets = { baiduApiKey: '', doubaoApiKey: '', tavilyApiKey: '', exaApiKey: '', serperApiKey: '' }
     const tavily = {
       id: 'tavily',
       available: () => true,
@@ -222,6 +238,7 @@ describe('PluginSearchProvider', () => {
         doubao: tavily,
         tavily,
         exa: tavily,
+        serper: tavily,
       },
       () => ({ config: current, secrets }),
       async () => {
@@ -236,14 +253,14 @@ describe('PluginSearchProvider', () => {
 
   it('explains a missing Tavily key instead of looking unset', async () => {
     const current = config({ searchProvider: 'tavily' })
-    const secrets = { baiduApiKey: '', doubaoApiKey: '', tavilyApiKey: '', exaApiKey: '' }
+    const secrets = { baiduApiKey: '', doubaoApiKey: '', tavilyApiKey: '', exaApiKey: '', serperApiKey: '' }
     const unused = {
       id: 'tavily',
       available: () => false,
       search: async () => ({ sources: [], truncated: false }),
     }
     const provider = new PluginSearchProvider(
-      { baidu: unused, doubao: unused, tavily: unused, exa: unused },
+      { baidu: unused, doubao: unused, tavily: unused, exa: unused, serper: unused },
       () => ({ config: current, secrets }),
       async () => {},
     )
@@ -262,7 +279,7 @@ describe('PluginSearchProvider', () => {
       search: async () => ({ sources: [], truncated: false }),
     }
     const provider = new PluginSearchProvider(
-      { baidu: unused, doubao: unused, tavily: unused, exa: unused },
+      { baidu: unused, doubao: unused, tavily: unused, exa: unused, serper: unused },
       () => ({ config: current, secrets }),
       async () => {},
     )
@@ -297,7 +314,7 @@ describe('PluginSearchProvider', () => {
     }
     const warnings: string[] = []
     const provider = new PluginSearchProvider(
-      { baidu, doubao: unused, tavily, exa: unused },
+      { baidu, doubao: unused, tavily, exa: unused, serper: unused },
       () => ({ config: current, secrets }),
       async () => {},
       { warn: (message) => warnings.push(message) },
@@ -334,7 +351,7 @@ describe('PluginSearchProvider', () => {
       search: async () => ({ sources: [], truncated: false }),
     }
     const provider = new PluginSearchProvider(
-      { baidu, doubao: unused, tavily, exa: unused },
+      { baidu, doubao: unused, tavily, exa: unused, serper: unused },
       () => ({ config: current, secrets }),
       async () => {},
     )
@@ -364,7 +381,7 @@ describe('PluginSearchProvider', () => {
       search: async () => ({ sources: [], truncated: false }),
     }
     const provider = new PluginSearchProvider(
-      { baidu, doubao: unused, tavily, exa: unused },
+      { baidu, doubao: unused, tavily, exa: unused, serper: unused },
       () => ({ config: current, secrets }),
       async () => {},
     )
@@ -407,7 +424,7 @@ describe('PluginFetchProvider', () => {
 
   it('explains a missing Tavily key for fetch', async () => {
     const current = config({ searchProvider: 'tavily' })
-    const secrets = { baiduApiKey: '', doubaoApiKey: '', tavilyApiKey: '', exaApiKey: '' }
+    const secrets = { baiduApiKey: '', doubaoApiKey: '', tavilyApiKey: '', exaApiKey: '', serperApiKey: '' }
     const unused = {
       id: 'tavily',
       available: () => false,

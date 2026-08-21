@@ -18,7 +18,7 @@ export type {
   WebSearchSource,
 }
 
-export const PROVIDER_IDS = ['baidu', 'doubao', 'tavily', 'exa'] as const
+export const PROVIDER_IDS = ['baidu', 'doubao', 'tavily', 'exa', 'serper'] as const
 export type ProviderId = (typeof PROVIDER_IDS)[number]
 export type SearchProviderChoice = 'auto' | ProviderId
 export const FETCH_PROVIDER_IDS = ['tavily', 'exa'] as const

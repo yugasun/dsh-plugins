@@ -74,7 +74,7 @@ describe('mapDoubaoResponse', () => {
 })
 
 describe('DoubaoSearchProvider.search', () => {
-  const secrets = { baiduApiKey: '', doubaoApiKey: 'doubao-api-key', tavilyApiKey: '', exaApiKey: '' }
+  const secrets = { baiduApiKey: '', doubaoApiKey: 'doubao-api-key', tavilyApiKey: '', exaApiKey: '', serperApiKey: '' }
 
   it('defaults to Custom web_search without a model', async () => {
     const fetchMock = vi.fn(async () =>

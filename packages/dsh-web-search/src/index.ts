@@ -11,6 +11,7 @@ import { readHttpJson, requestMethod, type IncomingHttp } from './http-body.ts'
 import { parseProbeProvider, probeProvider } from './probe.ts'
 import { PluginFetchProvider, PluginSearchProvider } from './provider.ts'
 import { mergeSecrets, pinWebSeams, pluginStatus, resolveSecrets, selectActive, type ResolvedSecrets } from './select.ts'
+import { SerperSearchProvider } from './serper.ts'
 import { TavilySearchProvider } from './tavily.ts'
 
 export const name = 'dsh-web-search'
@@ -58,6 +59,7 @@ export function apply(ctx: Context, config: Config): void {
     doubao: new DoubaoSearchProvider(resolve),
     tavily,
     exa,
+    serper: new SerperSearchProvider(resolve),
   }
 
   host.web.registerSearchProvider(new PluginSearchProvider(
@@ -85,7 +87,7 @@ export function apply(ctx: Context, config: Config): void {
     promptCtx.systemPrompt?.section({
       name: 'plugin:dsh-web-search',
       order: 111,
-      text: 'Use web_search for live lookup and web_fetch for page content. Settings → Web search chooses DSH built-in DeepSeek search or a custom backend (Baidu, Doubao, Tavily, Exa). web_fetch is chosen separately (auto follows Tavily/Exa search; or pin Tavily Extract, Exa Contents, or DSH http). Custom keys live there and are stripped from the shell. Do not curl Tavily or Exa, and do not look for TAVILY_API_KEY or EXA_API_KEY in env or config files.',
+      text: 'Use web_search for live lookup and web_fetch for page content. Settings → Web search chooses DSH built-in DeepSeek search or a custom backend (Baidu, Doubao, Tavily, Exa, Serper). web_fetch is chosen separately (auto follows Tavily/Exa search; or pin Tavily Extract, Exa Contents, or DSH http). Custom keys live there and are stripped from the shell. Do not curl Tavily, Exa, or Serper, and do not look for TAVILY_API_KEY, EXA_API_KEY, or SERPER_API_KEY in env or config files.',
     })
   })
 

@@ -17,6 +17,7 @@ export interface ResolvedSecrets {
   doubaoApiKey: string
   tavilyApiKey: string
   exaApiKey: string
+  serperApiKey: string
 }
 
 export const SECRET_ENVS: Record<keyof ResolvedSecrets, readonly string[]> = {
@@ -24,6 +25,7 @@ export const SECRET_ENVS: Record<keyof ResolvedSecrets, readonly string[]> = {
   doubaoApiKey: ['DOUBAO_API_KEY', 'DOUBAO_SEARCH_API_KEY', 'WEB_SEARCH_API_KEY', 'ARK_API_KEY'],
   tavilyApiKey: ['TAVILY_API_KEY'],
   exaApiKey: ['EXA_API_KEY'],
+  serperApiKey: ['SERPER_API_KEY'],
 }
 
 export function resolveSecrets(config: Config, env: EnvLookup): ResolvedSecrets {
@@ -32,6 +34,7 @@ export function resolveSecrets(config: Config, env: EnvLookup): ResolvedSecrets 
     doubaoApiKey: firstNonEmpty(config.doubaoApiKey, firstEnv(env, SECRET_ENVS.doubaoApiKey)),
     tavilyApiKey: firstNonEmpty(config.tavilyApiKey, firstEnv(env, SECRET_ENVS.tavilyApiKey)),
     exaApiKey: firstNonEmpty(config.exaApiKey, firstEnv(env, SECRET_ENVS.exaApiKey)),
+    serperApiKey: firstNonEmpty(config.serperApiKey, firstEnv(env, SECRET_ENVS.serperApiKey)),
   }
 }
 
@@ -41,6 +44,7 @@ export function mergeSecrets(base: ResolvedSecrets, overlay: Partial<ResolvedSec
     doubaoApiKey: firstNonEmpty(base.doubaoApiKey, overlay.doubaoApiKey),
     tavilyApiKey: firstNonEmpty(base.tavilyApiKey, overlay.tavilyApiKey),
     exaApiKey: firstNonEmpty(base.exaApiKey, overlay.exaApiKey),
+    serperApiKey: firstNonEmpty(base.serperApiKey, overlay.serperApiKey),
   }
 }
 
@@ -56,6 +60,8 @@ export function providerConfigured(id: ProviderId, secrets: ResolvedSecrets): bo
       return looksLikeSecret(secrets.tavilyApiKey)
     case 'exa':
       return looksLikeSecret(secrets.exaApiKey)
+    case 'serper':
+      return looksLikeSecret(secrets.serperApiKey)
   }
 }
 
@@ -77,6 +83,8 @@ export function providerEndpointReady(id: ProviderId, config: Config): boolean {
       return isValidBaseUrl(config.exaBaseURL)
         && config.exaProviderId.trim().length > 0
         && isPositiveInteger(config.exaHighlightsPerResult)
+    case 'serper':
+      return isValidBaseUrl(config.serperBaseURL)
   }
 }
 

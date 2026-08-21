@@ -1,7 +1,7 @@
 {
   "name": "@yugasun/dsh-web-search",
   "version": "0.2.3",
-  "description": "Multi-provider web search for DeepSeek Harness: Baidu, Doubao, Tavily, and Exa backends for ctx.web.",
+  "description": "Multi-provider web search for DeepSeek Harness: Baidu, Doubao, Tavily, Exa, and Serper backends for ctx.web.",
   "license": "MIT",
   "author": "yugasun",
   "type": "module",
@@ -38,7 +38,8 @@
     "baidu",
     "doubao",
     "tavily",
-    "exa"
+    "exa",
+    "serper"
   ],
   "homepage": "https://github.com/yugasun/dsh-plugins/tree/main/packages/dsh-web-search",
   "bugs": {
