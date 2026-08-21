@@ -70,7 +70,7 @@ describe('mapBaiduResponse', () => {
 })
 
 describe('BaiduSearchProvider.search', () => {
-  const secrets = { baiduApiKey: 'baidu-api-key', doubaoApiKey: '', tavilyApiKey: '', exaApiKey: '' }
+  const secrets = { baiduApiKey: 'baidu-api-key', doubaoApiKey: '', tavilyApiKey: '', exaApiKey: '', serperApiKey: '' }
 
   it('defaults to Qianfan web_search without a model', async () => {
     const fetchMock = vi.fn(async () =>

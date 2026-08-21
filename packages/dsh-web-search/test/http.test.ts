@@ -5,7 +5,7 @@ import { TavilySearchProvider } from '../src/tavily.ts'
 function tavilyProvider() {
   return new TavilySearchProvider(() => ({
     config: { ...DEFAULT_CONFIG, tavilyApiKey: 'tvly-test-key', searchProvider: 'tavily' },
-    secrets: { baiduApiKey: '', doubaoApiKey: '', tavilyApiKey: 'tvly-test-key', exaApiKey: '' },
+    secrets: { baiduApiKey: '', doubaoApiKey: '', tavilyApiKey: 'tvly-test-key', exaApiKey: '', serperApiKey: '' },
   }))
 }
 

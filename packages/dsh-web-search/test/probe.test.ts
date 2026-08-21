@@ -5,6 +5,7 @@ import { parseProbeProvider, probeProvider } from '../src/probe.ts'
 describe('parseProbeProvider', () => {
   it('accepts known backend ids', () => {
     expect(parseProbeProvider('tavily')).toBe('tavily')
+    expect(parseProbeProvider('serper')).toBe('serper')
     expect(parseProbeProvider('nope')).toBeUndefined()
     expect(parseProbeProvider(1)).toBeUndefined()
   })
@@ -20,9 +21,9 @@ describe('probeProvider', () => {
       },
     }
     const result = await probeProvider(
-      { baidu: unused, doubao: unused, tavily: unused, exa: unused },
+      { baidu: unused, doubao: unused, tavily: unused, exa: unused, serper: unused },
       DEFAULT_CONFIG,
-      { baiduApiKey: '', doubaoApiKey: '', tavilyApiKey: '', exaApiKey: '' },
+      { baiduApiKey: '', doubaoApiKey: '', tavilyApiKey: '', exaApiKey: '', serperApiKey: '' },
       'tavily',
     )
     expect(result).toMatchObject({
@@ -44,9 +45,9 @@ describe('probeProvider', () => {
       search: async () => ({ sources: [], truncated: false }),
     }
     const result = await probeProvider(
-      { baidu: unused, doubao: unused, tavily, exa: unused },
+      { baidu: unused, doubao: unused, tavily, exa: unused, serper: unused },
       { ...DEFAULT_CONFIG, tavilyApiKey: 'tvly-test-key' },
-      { baiduApiKey: '', doubaoApiKey: '', tavilyApiKey: 'tvly-test-key', exaApiKey: '' },
+      { baiduApiKey: '', doubaoApiKey: '', tavilyApiKey: 'tvly-test-key', exaApiKey: '', serperApiKey: '' },
       'tavily',
     )
     expect(result).toEqual({ ok: true, provider: 'tavily', sources: 1 })

@@ -30,6 +30,12 @@ export interface Config {
   exaSearchType: 'auto' | 'keyword' | 'neural'
   exaProviderId: string
   exaHighlightsPerResult: number
+  serperApiKey: string
+  serperBaseURL: string
+  /** ISO 3166-1 alpha-2 country for geolocation. Empty uses Serper default. */
+  serperGl: string
+  /** ISO 639-1 language for results. Empty uses Serper default. */
+  serperHl: string
 }
 
 export const SETTINGS_NS = 'dsh-web-search'
@@ -45,12 +51,13 @@ export const TAVILY_DEFAULT_BASE_URL = 'https://api.tavily.com'
 export const EXA_DEFAULT_BASE_URL = 'https://api.exa.ai'
 export const EXA_DEFAULT_PROVIDER_ID = 'exa'
 export const EXA_DEFAULT_HIGHLIGHTS = 1
+export const SERPER_DEFAULT_BASE_URL = 'https://google.serper.dev'
 
 export const Config: SchemaType<Config> = Schema.object({
   customSearch: Schema.boolean().default(true).description(
     'When on, web_search uses a backend configured on this page. When off, it uses DSH built-in DeepSeek search.',
   ),
-  searchProvider: Schema.union(['auto', 'baidu', 'doubao', 'tavily', 'exa'] as const).default('auto'),
+  searchProvider: Schema.union(['auto', 'baidu', 'doubao', 'tavily', 'exa', 'serper'] as const).default('auto'),
   fetchProvider: Schema.union(['auto', 'http', 'tavily', 'exa'] as const).default('auto').description(
     'web_fetch backend. Auto follows Tavily/Exa when that search backend is active; http uses DSH built-in fetch.',
   ),
@@ -75,6 +82,10 @@ export const Config: SchemaType<Config> = Schema.object({
   exaSearchType: Schema.union(['auto', 'keyword', 'neural'] as const).default('auto'),
   exaProviderId: Schema.string().default(EXA_DEFAULT_PROVIDER_ID),
   exaHighlightsPerResult: Schema.number().step(1).min(1).default(EXA_DEFAULT_HIGHLIGHTS),
+  serperApiKey: Schema.string().role('secret').default(''),
+  serperBaseURL: Schema.string().default(SERPER_DEFAULT_BASE_URL),
+  serperGl: Schema.string().default('').description('Country code for geolocation (ISO 3166-1 alpha-2).'),
+  serperHl: Schema.string().default('').description('Language code for results (ISO 639-1).'),
 })
 
 export const DEFAULT_CONFIG: Config = {
@@ -98,9 +109,13 @@ export const DEFAULT_CONFIG: Config = {
   exaSearchType: 'auto',
   exaProviderId: EXA_DEFAULT_PROVIDER_ID,
   exaHighlightsPerResult: EXA_DEFAULT_HIGHLIGHTS,
+  serperApiKey: '',
+  serperBaseURL: SERPER_DEFAULT_BASE_URL,
+  serperGl: '',
+  serperHl: '',
 }
 
-export const AUTO_PROVIDER_ORDER = ['baidu', 'doubao', 'tavily', 'exa'] as const
+export const AUTO_PROVIDER_ORDER = ['baidu', 'doubao', 'tavily', 'exa', 'serper'] as const
 export const AUTO_FETCH_ORDER = ['tavily', 'exa'] as const
 
 export function baiduSearchModeOf(config: Pick<Config, 'baiduSearchMode'>): BaiduSearchMode {

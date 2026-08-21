@@ -14,7 +14,7 @@
 | --- | --- | --- |
 | [dsh-web-search](packages/dsh-web-search) | [@yugasun/dsh-web-search](https://www.npmjs.com/package/@yugasun/dsh-web-search) | `dsh plugin --profile web add @yugasun/dsh-web-search` |
 
-**dsh-web-search** — 多后端网页搜索：百度、豆包、Tavily、Exa。`web_fetch` 可独立选择 Tavily Extract、Exa Contents 或 DSH 内置 HTTP。
+**dsh-web-search** — 多后端网页搜索：百度、豆包、Tavily、Exa、Serper。`web_fetch` 可独立选择 Tavily Extract、Exa Contents 或 DSH 内置 HTTP。
 
 安装插件会在 Harness 进程内以你的权限运行第三方代码。安装前请阅读源码。
 

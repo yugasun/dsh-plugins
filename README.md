@@ -14,7 +14,7 @@ Compatible with DeepSeek Harness **0.1.0-rc.7**.
 | --- | --- | --- |
 | [dsh-web-search](packages/dsh-web-search) | [@yugasun/dsh-web-search](https://www.npmjs.com/package/@yugasun/dsh-web-search) | `dsh plugin --profile web add @yugasun/dsh-web-search` |
 
-**dsh-web-search** — multi-provider web search for `ctx.web`: Baidu, Doubao, Tavily, Exa. `web_fetch` can use Tavily Extract, Exa Contents, or DSH built-in HTTP independently of the search backend.
+**dsh-web-search** — multi-provider web search for `ctx.web`: Baidu, Doubao, Tavily, Exa, Serper. `web_fetch` can use Tavily Extract, Exa Contents, or DSH built-in HTTP independently of the search backend.
 
 Installing a plugin runs third-party code in the harness process with your permissions. Review the source before you install.
 

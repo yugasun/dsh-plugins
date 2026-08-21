@@ -100,10 +100,11 @@ function KeyField(props: {
       label: `${getKey} (${props.t(props.vendor)}) · ${props.t('opensNewTab')}`,
       children: getKey,
     }),
-    children: h(SecretField, {
+        children: h(SecretField, {
       id: props.id,
       configured: props.configured,
       savedLabel: props.t('saved'),
+      clearLabel: props.t('clearKey'),
       placeholder: props.placeholder,
       disabled: props.disabled,
       onSave: props.onSave,
@@ -140,6 +141,7 @@ function SecretField(props: {
   id?: string
   configured: boolean
   savedLabel: string
+  clearLabel: string
   placeholder?: string
   disabled: boolean
   onSave: (value: string) => void
@@ -154,6 +156,12 @@ function SecretField(props: {
     draftRef.current = null
     setDraft(null)
     if (commit.kind === 'set') props.onSave(commit.value)
+    else if (commit.kind === 'clear') props.onSave('')
+  }
+  const clear = () => {
+    draftRef.current = null
+    setDraft(null)
+    props.onSave('')
   }
   return h(
     'div',
@@ -182,6 +190,16 @@ function SecretField(props: {
     }),
     props.configured && draft === null
       ? h('span', { className: 'dshWebSearchSecret-saved' }, props.savedLabel)
+      : null,
+    props.configured && !props.disabled
+      ? h('button', {
+        type: 'button',
+        className: 'dshWebSearchSecret-clear',
+        onMouseDown: (event: { preventDefault(): void }) => {
+          event.preventDefault()
+        },
+        onClick: clear,
+      }, props.clearLabel)
       : null,
   )
 }
@@ -415,6 +433,12 @@ export function SearchCard(props: SearchCardProps) {
   const set = (field: string, next: unknown) => {
     void props.scope.set(field, next).then(() => refresh())
   }
+  const saveSecret = (field: string, next: string) => {
+    const write = next.length === 0 && typeof props.scope.unset === 'function'
+      ? props.scope.unset(field)
+      : props.scope.set(field, next)
+    void write.then(() => refresh())
+  }
   const initialTab: ProviderId = firstOpenProvider(
     value.searchProvider,
     status.active,
@@ -475,7 +499,7 @@ export function SearchCard(props: SearchCardProps) {
           configured: configured('baidu'),
           disabled,
           t,
-          onSave: (next) => set('baiduApiKey', next),
+          onSave: (next) => saveSecret('baiduApiKey', next),
         }),
         value.baiduSearchMode === 'ai'
           ? h(Field, {
@@ -536,7 +560,7 @@ export function SearchCard(props: SearchCardProps) {
           configured: configured('doubao'),
           disabled,
           t,
-          onSave: (next) => set('doubaoApiKey', next),
+          onSave: (next) => saveSecret('doubaoApiKey', next),
         }),
         h(
           'details',
@@ -563,7 +587,7 @@ export function SearchCard(props: SearchCardProps) {
           configured: configured('tavily'),
           disabled,
           t,
-          onSave: (next) => set('tavilyApiKey', next),
+          onSave: (next) => saveSecret('tavilyApiKey', next),
         }),
         h(Field, {
           key: 'tavily-depth',
@@ -612,6 +636,56 @@ export function SearchCard(props: SearchCardProps) {
         h(ProbeButton, { key: 'tavily-probe', id: 'tavily', ...probeProps }),
       ]
     }
+    if (id === 'serper') {
+      return [
+        h('p', { key: 'serper-note', className: 'dshWebSearchPanel-note' }, t('serperNote')),
+        h(KeyField, {
+          key: 'serper-key',
+          id: 'dsh-web-search-serper-key',
+          vendor: 'serper',
+          label: t('serperKey'),
+          hint: t('serperKeyHint'),
+          placeholder: 'SERPER_API_KEY',
+          configured: configured('serper'),
+          disabled,
+          t,
+          onSave: (next) => saveSecret('serperApiKey', next),
+        }),
+        h(
+          'details',
+          { key: 'serper-endpoint', className: 'dshWebSearchDetails' },
+          h('summary', null, t('endpoint')),
+          h(TextField, {
+            value: value.serperBaseURL,
+            disabled,
+            onChange: (next) => set('serperBaseURL', next),
+          }),
+          h(Field, {
+            htmlFor: 'dsh-web-search-serper-gl',
+            label: t('serperGl'),
+            hint: t('serperGlHint'),
+            children: h(TextField, {
+              id: 'dsh-web-search-serper-gl',
+              value: value.serperGl,
+              disabled,
+              onChange: (next) => set('serperGl', next),
+            }),
+          }),
+          h(Field, {
+            htmlFor: 'dsh-web-search-serper-hl',
+            label: t('serperHl'),
+            hint: t('serperHlHint'),
+            children: h(TextField, {
+              id: 'dsh-web-search-serper-hl',
+              value: value.serperHl,
+              disabled,
+              onChange: (next) => set('serperHl', next),
+            }),
+          }),
+        ),
+        h(ProbeButton, { key: 'serper-probe', id: 'serper', ...probeProps }),
+      ]
+    }
     return [
       h('p', { key: 'exa-note', className: 'dshWebSearchPanel-note' }, t('exaNote')),
       h(KeyField, {
@@ -624,7 +698,7 @@ export function SearchCard(props: SearchCardProps) {
         configured: configured('exa'),
         disabled,
         t,
-        onSave: (next) => set('exaApiKey', next),
+        onSave: (next) => saveSecret('exaApiKey', next),
       }),
       h(Field, {
         key: 'exa-type',

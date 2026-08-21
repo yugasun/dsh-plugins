@@ -65,7 +65,7 @@ describe('ExaSearchProvider.fetch', () => {
 
     const provider = new ExaSearchProvider(() => ({
       config: { ...DEFAULT_CONFIG, exaApiKey: 'exa-test-key', searchProvider: 'exa' },
-      secrets: { baiduApiKey: '', doubaoApiKey: '', tavilyApiKey: '', exaApiKey: 'exa-test-key' },
+      secrets: { baiduApiKey: '', doubaoApiKey: '', tavilyApiKey: '', exaApiKey: 'exa-test-key', serperApiKey: '' },
     }))
     const result = await provider.fetch({ url: 'https://example.com/doc' })
     expect(result.body).toEqual({ kind: 'text', content: 'cleaned page' })
