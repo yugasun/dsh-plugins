@@ -27,7 +27,7 @@ test('requires a changeset when a public package changes', () => {
   )
 })
 
-test('accepts a normal or empty changeset file', () => {
+test('accepts a changeset file', () => {
   assert.deepEqual(
     classifyChangesetRequirement({
       changedFiles: [
