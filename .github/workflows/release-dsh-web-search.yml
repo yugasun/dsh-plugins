@@ -1,0 +1,136 @@
+name: Release dsh-web-search
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - packages/dsh-web-search/**
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: release-dsh-web-search
+  cancel-in-progress: false
+
+jobs:
+  release:
+    # Commits pushed with GITHUB_TOKEN do not normally start new workflow runs.
+    # This guard also prevents a release commit pushed by another bot from looping.
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Test, typecheck, and build
+        run: pnpm --filter @yugasun/dsh-web-search run test && pnpm --filter @yugasun/dsh-web-search run typecheck && pnpm --filter @yugasun/dsh-web-search run build
+
+      - name: Select release version
+        id: version
+        shell: bash
+        run: |
+          node <<'NODE'
+          const { execFileSync } = require('node:child_process');
+          const fs = require('node:fs');
+
+          const packagePath = 'packages/dsh-web-search/package.json';
+          const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+
+          const parseVersion = (version) => {
+            const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(version);
+            if (!match) throw new Error(`Expected a stable semver version, received: ${version}`);
+            return match.slice(1).map(Number);
+          };
+
+          const compareVersions = (left, right) => {
+            for (let index = 0; index < left.length; index += 1) {
+              if (left[index] !== right[index]) return left[index] - right[index];
+            }
+            return 0;
+          };
+
+          const publishedVersion = JSON.parse(
+            execFileSync('npm', ['view', pkg.name, 'version', '--json'], { encoding: 'utf8' }),
+          );
+          const local = parseVersion(pkg.version);
+          const published = parseVersion(publishedVersion);
+          const headSubject = execFileSync('git', ['log', '-1', '--pretty=%s'], { encoding: 'utf8' }).trim();
+
+          // A manual retry after a completed release should be a no-op. If npm is
+          // behind, the same release commit remains publishable for recovery.
+          if (
+            compareVersions(local, published) === 0
+            && headSubject.startsWith(`chore(dsh-web-search): release ${pkg.version}`)
+          ) {
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, `version=${pkg.version}\nshould_publish=false\n`);
+            console.log(`${pkg.name}@${pkg.version} is already published; nothing to do.`);
+            process.exit(0);
+          }
+
+          // Keep an explicitly prepared or previously committed version. Otherwise,
+          // increment the patch component of the version currently on npm.
+          const next = compareVersions(local, published) > 0
+            ? pkg.version
+            : `${published[0]}.${published[1]}.${published[2] + 1}`;
+
+          if (pkg.version !== next) {
+            pkg.version = next;
+            fs.writeFileSync(packagePath, `${JSON.stringify(pkg, null, 2)}\n`);
+          }
+
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `version=${next}\nshould_publish=true\n`);
+          console.log(`Preparing ${pkg.name}@${next} (npm currently has ${publishedVersion})`);
+          NODE
+
+      - name: Commit version and create tag
+        if: steps.version.outputs.should_publish == 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add packages/dsh-web-search/package.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(dsh-web-search): release ${VERSION} [skip ci]"
+          fi
+
+          # A PR may land while this job is testing. Replay the version commit on
+          # the newest main before pushing so queued releases stay monotonic.
+          git pull --rebase origin main
+
+          tag="dsh-web-search-v${VERSION}"
+          if git rev-parse "refs/tags/${tag}" >/dev/null 2>&1; then
+            test "$(git rev-list -n 1 "${tag}")" = "$(git rev-parse HEAD)"
+          else
+            git tag -a "${tag}" -m "@yugasun/dsh-web-search ${VERSION}"
+          fi
+
+          git push origin HEAD:main --follow-tags
+
+      - name: Publish to npm with OIDC
+        if: steps.version.outputs.should_publish == 'true'
+        working-directory: packages/dsh-web-search
+        run: npm publish
