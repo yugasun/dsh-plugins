@@ -27,9 +27,6 @@ jobs:
 
   changeset:
     if: github.event_name == 'pull_request'
-    env:
-      GITHUB_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
-      GITHUB_REPOSITORY: ${{ github.repository }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -44,3 +41,6 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm changeset:check
+        env:
+          RELEASE_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          RELEASE_BASE_REPOSITORY: ${{ github.repository }}
