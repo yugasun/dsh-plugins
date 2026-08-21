@@ -20,7 +20,7 @@ Installing a plugin runs third-party code in the harness process with your permi
 
 ## Develop
 
-Requires Node.js 22+ and [pnpm](https://pnpm.io) 10.
+Requires Node.js `^22.11.0 || ^24.0.0 || >=26.0.0` and [pnpm](https://pnpm.io) 10.
 
 ```sh
 pnpm install
@@ -45,15 +45,15 @@ dsh plugin --profile web add github:yugasun/dsh-plugins#path:packages/dsh-web-se
 
 pnpm ≥10 may ask you to allow the package `prepare` script (`allowBuilds`) the first time you install from Git.
 
-## Publish
+## Release
 
-After `npm login`:
+Versions and npm publication for every public package under `packages/` are managed by Changesets and GitHub Actions.
 
-```sh
-pnpm --filter @yugasun/dsh-web-search publish
-```
+For a package change, run `pnpm changeset`, choose the affected packages and semantic version bump, and commit the generated `.changeset/*.md` file. Use `pnpm changeset:status` to inspect pending releases; PR checks run `pnpm changeset:check`, and `pnpm check` runs the full local validation.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for version bumps and dry-runs.
+After the PR merges to `main`, GitHub Actions creates or updates the `Version Packages` PR. Merging that PR versions and publishes all pending packages through npm Trusted Publishing/OIDC. Normal releases need no local npm authentication, token, or 2FA.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the complete release flow.
 
 ## License
 

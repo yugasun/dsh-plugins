@@ -20,7 +20,7 @@
 
 ## 开发
 
-需要 Node.js 22+ 和 [pnpm](https://pnpm.io) 10。
+需要 Node.js `^22.11.0 || ^24.0.0 || >=26.0.0` 和 [pnpm](https://pnpm.io) 10。
 
 ```sh
 pnpm install
@@ -47,13 +47,13 @@ pnpm ≥10 第一次从 Git 安装时可能会询问是否允许 `prepare` 脚�
 
 ## 发布
 
-`npm login` 之后：
+`packages/` 下所有公开包的版本和 npm 发布由 Changesets 与 GitHub Actions 管理。
 
-```sh
-pnpm --filter @yugasun/dsh-web-search publish
-```
+修改包时运行 `pnpm changeset`，选择受影响的包和语义化版本级别，并提交生成的 `.changeset/*.md` 文件。可用 `pnpm changeset:status` 查看待发布内容；PR 检查会运行 `pnpm changeset:check`，本地完整校验使用 `pnpm check`。
 
-版本号和试打包见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+PR 合入 `main` 后，GitHub Actions 会创建或更新 `Version Packages` PR。合入该 PR 后，所有待发布的包会通过 npm Trusted Publishing/OIDC 自动更新版本并发布。正常发布不需要在本地进行 npm 身份认证、配置 token 或执行 2FA。
+
+完整发布流程见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 许可证
 
