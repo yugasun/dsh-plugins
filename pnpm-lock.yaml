@@ -15,8 +15,8 @@ importers:
   packages/dsh-web-search:
     dependencies:
       searchsuite:
-        specifier: ^0.1.0
-        version: 0.1.0
+        specifier: ^0.1.1
+        version: 0.1.1
     devDependencies:
       '@deepseek-ai/cordis':
         specifier: ^4.0.1
@@ -999,14 +999,14 @@ packages:
     engines: {node: '>=18.0.0', npm: '>=8.0.0'}
     hasBin: true
 
+  searchsuite@0.1.1:
+    resolution: {integrity: sha512-I8GZnnUO0Kkxf8cXttteFzeOriqDN7BuUsNR+66EY8lJoBSjHG5u3FTwOgKmRe6NPmXWzGuf05zFqxzYghHvxg==}
+    engines: {node: '>=24'}
+
   semver@7.8.5:
     resolution: {integrity: sha512-Y7/KDsb8LjooZpwaqGyulO6DQlksgCncchHGk+sZIY4SBvUocMBEFH5Ur1fI4dV+Jvl0w6cjvucaIi40puRioA==}
     engines: {node: '>=10'}
     hasBin: true
-
-  searchsuite@0.1.0:
-    resolution: {integrity: sha512-iEtec2GyNxa6tz8dBWCkeDVxiWF5rAUB0kWflkqXPe8kOaAINoOW8EyRd3sx4BGcnj6xqXcpQxK+4U28qD/FjQ==}
-    engines: {node: '>=24'}
 
   shell-quote@1.10.0:
     resolution: {integrity: sha512-w1aiOKwKuRgtwAReIIj89puqg+I7GvX4IbLrvmhXbzQsj1+Zwi4VO3+fa6ZF91TWSjIxoEkKnMeHcLEODK5ZXA==}
@@ -1956,9 +1956,9 @@ snapshots:
       '@rollup/rollup-win32-x64-msvc': 4.62.4
       fsevents: 2.3.3
 
-  semver@7.8.5: {}
+  searchsuite@0.1.1: {}
 
-  searchsuite@0.1.0: {}
+  semver@7.8.5: {}
 
   shell-quote@1.10.0: {}
 

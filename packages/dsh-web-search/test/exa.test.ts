@@ -73,6 +73,7 @@ describe('ExaSearchProvider.fetch', () => {
     expect(url).toBe('https://api.exa.ai/contents')
     expect(JSON.parse(String(init.body))).toMatchObject({
       urls: ['https://example.com/doc'],
+      text: { maxCharacters: 100_000 },
     })
   })
 })

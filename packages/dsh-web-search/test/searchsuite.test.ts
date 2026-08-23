@@ -108,3 +108,69 @@ describe('SearchSuiteSearchProvider', () => {
     expect(fetchMock).not.toHaveBeenCalled()
   })
 })
+
+describe('SearchSuite page fetch adapters', () => {
+  it('routes Tavily content fetching through SearchSuite', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+      results: [{ url: 'https://example.com/article', raw_content: '  page body  ' }],
+    }), { status: 200, headers: { 'content-type': 'application/json' } }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const provider = new TavilySearchProvider(() => ({
+      config: { ...DEFAULT_CONFIG, tavilyApiKey: secrets.tavilyApiKey, searchProvider: 'tavily' },
+      secrets,
+    }))
+    const result = await provider.fetch({ url: 'https://example.com/article' })
+
+    expect(result).toEqual({
+      url: 'https://example.com/article',
+      statusCode: 200,
+      body: { kind: 'text', content: 'page body' },
+      truncated: false,
+    })
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe('https://api.tavily.com/extract')
+    expect(JSON.parse(String(init.body))).toMatchObject({
+      urls: ['https://example.com/article'],
+      extract_depth: 'basic',
+      format: 'markdown',
+    })
+  })
+
+  it('preserves Tavily no-content responses from SearchSuite', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+      results: [],
+      failed_results: [{ url: 'https://example.com/gone', error: 'not extractable' }],
+    }), { status: 200, headers: { 'content-type': 'application/json' } })))
+
+    const provider = new TavilySearchProvider(() => ({
+      config: { ...DEFAULT_CONFIG, tavilyApiKey: secrets.tavilyApiKey, searchProvider: 'tavily' },
+      secrets,
+    }))
+    const result = await provider.fetch({ url: 'https://example.com/gone' })
+
+    expect(result).toEqual({
+      url: 'https://example.com/gone',
+      statusCode: 502,
+      body: { kind: 'text', content: 'not extractable' },
+      truncated: false,
+    })
+  })
+
+  it('maps cancelled page fetches to the plugin abort error', async () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+    const controller = new AbortController()
+    controller.abort()
+
+    const provider = new ExaSearchProvider(() => ({
+      config: { ...DEFAULT_CONFIG, exaApiKey: 'exa-test-key', searchProvider: 'exa' },
+      secrets: { ...secrets, tavilyApiKey: '', exaApiKey: 'exa-test-key' },
+    }))
+
+    await expect(provider.fetch({ url: 'https://example.com/article' }, controller.signal)).rejects.toMatchObject({
+      code: 'WEB_ABORTED',
+    })
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+})
