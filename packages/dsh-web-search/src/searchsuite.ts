@@ -2,15 +2,16 @@ import {
   SearchAbortedError,
   SearchSuite,
   SearchSuiteError,
+  type FetchRequest,
   type ProviderConfigMap,
   type ProviderSearchRequest,
   type SearchResponse,
 } from 'searchsuite'
-import type { WebSearchProvider, WebSearchRequest, WebSearchResult, WebSearchSource } from '@deepseek-ai/dsh-web'
+import type { WebFetchProvider, WebFetchRequest, WebFetchResult, WebSearchProvider, WebSearchRequest, WebSearchResult, WebSearchSource } from '@deepseek-ai/dsh-web'
 import { doubaoBaseUrlOf, baiduSearchModeOf, doubaoSearchModeOf, type Config } from './config.ts'
-import { abortSearch, providerFailed } from './errors.ts'
-import { isSelected, type ResolvedSecrets } from './select.ts'
-import type { ProviderId } from './types.ts'
+import { abortSearch, providerFailed, requireHttpUrl } from './errors.ts'
+import { isSelected, providerUsable, type ResolvedSecrets } from './select.ts'
+import type { FetchProviderId, ProviderId } from './types.ts'
 
 const RESULT_LIMITS: Record<ProviderId, number> = {
   baidu: 50,
@@ -19,6 +20,8 @@ const RESULT_LIMITS: Record<ProviderId, number> = {
   exa: 100,
   serper: 100,
 }
+
+const EXA_MAX_CHARACTERS = 100_000
 
 function resultLimit(id: ProviderId, config: Config): number {
   if (id === 'baidu') return baiduSearchModeOf(config) === 'ai' ? 20 : RESULT_LIMITS.baidu
@@ -171,6 +174,57 @@ export class SearchSuiteSearchProvider implements WebSearchProvider {
       }
       const message = error instanceof SearchSuiteError ? error.message : 'request failed'
       providerFailed(`${this.id} search failed: ${message}`, error)
+    }
+  }
+}
+
+export class SearchSuiteFetchProvider implements WebFetchProvider {
+  readonly id: FetchProviderId
+
+  constructor(
+    provider: FetchProviderId,
+    private readonly resolve: () => { config: Config; secrets: ResolvedSecrets },
+  ) {
+    this.id = provider
+  }
+
+  available(): boolean {
+    const { config, secrets } = this.resolve()
+    return providerUsable(this.id, config, secrets)
+  }
+
+  async fetch(request: WebFetchRequest, signal?: AbortSignal): Promise<WebFetchResult> {
+    const { config, secrets } = this.resolve()
+    const url = requireHttpUrl(request.url).toString()
+    const fetchRequest: FetchRequest = this.id === 'tavily'
+      ? {
+        provider: 'tavily',
+        url,
+        providerOptions: { extractDepth: config.tavilyExtractDepth, format: 'markdown' },
+      }
+      : {
+        provider: 'exa',
+        url,
+        providerOptions: { maxCharacters: EXA_MAX_CHARACTERS },
+      }
+
+    try {
+      const result = await new SearchSuite({ providers: providerConfig(config, secrets) }).fetch({
+        ...fetchRequest,
+        ...(signal === undefined ? {} : { signal }),
+      })
+      return {
+        url: result.url,
+        statusCode: result.statusCode,
+        body: result.body,
+        truncated: result.truncated,
+      }
+    } catch (error: unknown) {
+      if (error instanceof SearchAbortedError || signal?.aborted) {
+        abortSearch(`${this.id} fetch`, error)
+      }
+      const message = error instanceof SearchSuiteError ? error.message : 'request failed'
+      providerFailed(`${this.id} fetch failed: ${message}`, error)
     }
   }
 }

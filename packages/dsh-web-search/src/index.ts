@@ -3,14 +3,12 @@ import { installSettingsSection, settingsNamespace } from './host.ts'
 import { Config, SETTINGS_NS } from './config.ts'
 import { credentialOverlay, type Credentials } from './credentials.ts'
 import { launchEnvLookup } from './env.ts'
-import { ExaSearchProvider } from './exa.ts'
 import type { HostContext } from './host-types.ts'
 import { readHttpJson, requestMethod, type IncomingHttp } from './http-body.ts'
 import { parseProbeProvider, probeProvider } from './probe.ts'
 import { PluginFetchProvider, PluginSearchProvider } from './provider.ts'
 import { mergeSecrets, pinWebSeams, pluginStatus, resolveSecrets, selectActive, type ResolvedSecrets } from './select.ts'
-import { SearchSuiteSearchProvider } from './searchsuite.ts'
-import { TavilySearchProvider } from './tavily.ts'
+import { SearchSuiteFetchProvider, SearchSuiteSearchProvider } from './searchsuite.ts'
 
 export const name = 'dsh-web-search'
 export const inject = ['web']
@@ -50,8 +48,6 @@ export function apply(ctx: Context, config: Config): void {
   })
   pinSeam()
 
-  const tavily = new TavilySearchProvider(resolve)
-  const exa = new ExaSearchProvider(resolve)
   const backends = {
     baidu: new SearchSuiteSearchProvider('baidu', resolve),
     doubao: new SearchSuiteSearchProvider('doubao', resolve),
@@ -67,7 +63,10 @@ export function apply(ctx: Context, config: Config): void {
     host.logger,
   ))
   host.web.registerFetchProvider(new PluginFetchProvider(
-    { tavily, exa },
+    {
+      tavily: new SearchSuiteFetchProvider('tavily', resolve),
+      exa: new SearchSuiteFetchProvider('exa', resolve),
+    },
     resolve,
     refreshOverlay,
     host.logger,

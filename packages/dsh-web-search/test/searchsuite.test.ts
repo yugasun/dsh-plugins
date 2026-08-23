@@ -1,9 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { WebFetchProvider as SearchSuiteWebFetchProvider } from 'searchsuite'
 import { DEFAULT_CONFIG } from '../src/config.ts'
-import { ExaSearchProvider } from '../src/exa.ts'
-import { SearchSuiteSearchProvider } from '../src/searchsuite.ts'
-import { TavilySearchProvider } from '../src/tavily.ts'
+import { SearchSuiteFetchProvider, SearchSuiteSearchProvider } from '../src/searchsuite.ts'
 
 const secrets = {
   baiduApiKey: '',
@@ -24,8 +22,8 @@ describe('SearchSuiteSearchProvider', () => {
       secrets,
     })
     const providers: SearchSuiteWebFetchProvider[] = [
-      new TavilySearchProvider(resolve),
-      new ExaSearchProvider(resolve),
+      new SearchSuiteFetchProvider('tavily', resolve),
+      new SearchSuiteFetchProvider('exa', resolve),
     ]
 
     expect(providers.map((provider) => provider.id)).toEqual(['tavily', 'exa'])
@@ -116,7 +114,7 @@ describe('SearchSuite page fetch adapters', () => {
     }), { status: 200, headers: { 'content-type': 'application/json' } }))
     vi.stubGlobal('fetch', fetchMock)
 
-    const provider = new TavilySearchProvider(() => ({
+    const provider = new SearchSuiteFetchProvider('tavily', () => ({
       config: { ...DEFAULT_CONFIG, tavilyApiKey: secrets.tavilyApiKey, searchProvider: 'tavily' },
       secrets,
     }))
@@ -143,7 +141,7 @@ describe('SearchSuite page fetch adapters', () => {
       failed_results: [{ url: 'https://example.com/gone', error: 'not extractable' }],
     }), { status: 200, headers: { 'content-type': 'application/json' } })))
 
-    const provider = new TavilySearchProvider(() => ({
+    const provider = new SearchSuiteFetchProvider('tavily', () => ({
       config: { ...DEFAULT_CONFIG, tavilyApiKey: secrets.tavilyApiKey, searchProvider: 'tavily' },
       secrets,
     }))
@@ -163,7 +161,7 @@ describe('SearchSuite page fetch adapters', () => {
     const controller = new AbortController()
     controller.abort()
 
-    const provider = new ExaSearchProvider(() => ({
+    const provider = new SearchSuiteFetchProvider('exa', () => ({
       config: { ...DEFAULT_CONFIG, exaApiKey: 'exa-test-key', searchProvider: 'exa' },
       secrets: { ...secrets, tavilyApiKey: '', exaApiKey: 'exa-test-key' },
     }))
@@ -172,5 +170,31 @@ describe('SearchSuite page fetch adapters', () => {
       code: 'WEB_ABORTED',
     })
     expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('preserves invalid URL errors at the DSH seam', async () => {
+    const provider = new SearchSuiteFetchProvider('tavily', () => ({
+      config: { ...DEFAULT_CONFIG, tavilyApiKey: secrets.tavilyApiKey, searchProvider: 'tavily' },
+      secrets,
+    }))
+
+    await expect(provider.fetch({ url: 'file:///etc/passwd' })).rejects.toMatchObject({
+      code: 'WEB_INVALID_URL',
+    })
+  })
+
+  it('maps SearchSuite provider failures to the DSH provider error', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(
+      JSON.stringify({ message: 'Invalid API key' }),
+      { status: 401, headers: { 'content-type': 'application/json' } },
+    )))
+    const provider = new SearchSuiteSearchProvider('tavily', () => ({
+      config: { ...DEFAULT_CONFIG, tavilyApiKey: secrets.tavilyApiKey, searchProvider: 'tavily' },
+      secrets,
+    }))
+
+    await expect(provider.search({ query: 'x' })).rejects.toMatchObject({
+      code: 'WEB_PROVIDER_ERROR',
+    })
   })
 })
