@@ -7,12 +7,18 @@ import type {
   WebSearchResult,
   WebSearchSource,
 } from '@deepseek-ai/dsh-web'
+import {
+  SearchAbortedError,
+  SearchSuite,
+  SearchSuiteError,
+} from 'searchsuite'
 import type { Config } from './config.ts'
-import { requireHttpUrl, toIsoDate } from './errors.ts'
+import { abortSearch, providerFailed, requireHttpUrl, toIsoDate } from './errors.ts'
 import { hitResultCap } from './urls.ts'
 import { failedFetchResult, textFetchResult } from './fetch-result.ts'
 import { postJson } from './http.ts'
 import { isSelected, type ResolvedSecrets } from './select.ts'
+import { providerConfig } from './searchsuite.ts'
 
 export const TAVILY_PROVIDER_ID = 'tavily'
 
@@ -62,7 +68,7 @@ export function mapTavilyExtractResponse(
   const message = failed?.error?.trim()
   return failedFetchResult(
     failed?.url?.trim() || requestUrl,
-    message != null && message.length > 0 ? message : 'Tavily extract returned no content',
+    message != null && message.length > 0 ? message : 'Tavily returned no content',
   )
 }
 
@@ -132,18 +138,23 @@ export class TavilySearchProvider implements WebSearchProvider, WebFetchProvider
   async fetch(request: WebFetchRequest, signal?: AbortSignal): Promise<WebFetchResult> {
     const parsed = requireHttpUrl(request.url)
     const { config, secrets } = this.resolve()
-    const payload = await postJson(
-      'Tavily',
-      `${config.tavilyBaseURL.replace(/\/$/, '')}/extract`,
-      { authorization: `Bearer ${secrets.tavilyApiKey}` },
-      {
-        urls: [parsed.toString()],
-        extract_depth: config.tavilyExtractDepth,
-        format: 'markdown',
-        include_images: false,
-      },
-      signal,
-    )
-    return mapTavilyExtractResponse(parsed.toString(), payload as TavilyExtractResponse)
+    try {
+      const result = await new SearchSuite({ providers: providerConfig(config, secrets) }).fetch({
+        provider: 'tavily',
+        url: parsed.toString(),
+        providerOptions: { extractDepth: config.tavilyExtractDepth, format: 'markdown' },
+        ...(signal === undefined ? {} : { signal }),
+      })
+      return {
+        url: result.url,
+        statusCode: result.statusCode,
+        body: result.body,
+        truncated: result.truncated,
+      }
+    } catch (error: unknown) {
+      if (error instanceof SearchAbortedError || signal?.aborted) abortSearch('Tavily fetch', error)
+      const message = error instanceof SearchSuiteError ? error.message : 'request failed'
+      providerFailed(`Tavily fetch failed: ${message}`, error)
+    }
   }
 }

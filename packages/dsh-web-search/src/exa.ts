@@ -7,12 +7,18 @@ import type {
   WebSearchResult,
   WebSearchSource,
 } from '@deepseek-ai/dsh-web'
+import {
+  SearchAbortedError,
+  SearchSuite,
+  SearchSuiteError,
+} from 'searchsuite'
 import type { Config } from './config.ts'
-import { requireHttpUrl, toIsoDate } from './errors.ts'
+import { abortSearch, providerFailed, requireHttpUrl, toIsoDate } from './errors.ts'
 import { hitResultCap } from './urls.ts'
 import { failedFetchResult, MAX_FETCH_CHARS, textFetchResult } from './fetch-result.ts'
 import { postJson } from './http.ts'
 import { isSelected, type ResolvedSecrets } from './select.ts'
+import { providerConfig } from './searchsuite.ts'
 
 export interface ExaResult {
   url?: string
@@ -66,7 +72,7 @@ export function mapExaContentsResponse(
   if (content != null && content.length > 0) {
     return textFetchResult(hit?.url?.trim() || requestUrl, content)
   }
-  return failedFetchResult(hit?.url?.trim() || requestUrl, 'Exa contents returned no text')
+  return failedFetchResult(hit?.url?.trim() || requestUrl, 'Exa returned no content')
 }
 
 export class ExaSearchProvider implements WebSearchProvider, WebFetchProvider {
@@ -105,17 +111,23 @@ export class ExaSearchProvider implements WebSearchProvider, WebFetchProvider {
   async fetch(request: WebFetchRequest, signal?: AbortSignal): Promise<WebFetchResult> {
     const parsed = requireHttpUrl(request.url)
     const { config, secrets } = this.resolve()
-    const payload = await postJson(
-      'Exa',
-      `${config.exaBaseURL.replace(/\/$/, '')}/contents`,
-      { authorization: `Bearer ${secrets.exaApiKey}` },
-      {
-        urls: [parsed.toString()],
-        ids: [parsed.toString()],
-        text: { maxCharacters: MAX_FETCH_CHARS },
-      },
-      signal,
-    )
-    return mapExaContentsResponse(parsed.toString(), payload as ExaContentsResponse)
+    try {
+      const result = await new SearchSuite({ providers: providerConfig(config, secrets) }).fetch({
+        provider: 'exa',
+        url: parsed.toString(),
+        providerOptions: { maxCharacters: MAX_FETCH_CHARS },
+        ...(signal === undefined ? {} : { signal }),
+      })
+      return {
+        url: result.url,
+        statusCode: result.statusCode,
+        body: result.body,
+        truncated: result.truncated,
+      }
+    } catch (error: unknown) {
+      if (error instanceof SearchAbortedError || signal?.aborted) abortSearch('Exa fetch', error)
+      const message = error instanceof SearchSuiteError ? error.message : 'request failed'
+      providerFailed(`Exa fetch failed: ${message}`, error)
+    }
   }
 }

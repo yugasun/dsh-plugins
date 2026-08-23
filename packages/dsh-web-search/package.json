@@ -79,6 +79,9 @@
     "@deepseek-ai/dsh-web": { "optional": true },
     "@deepseek-ai/schemastery": { "optional": true }
   },
+  "dependencies": {
+    "searchsuite": "^0.1.0"
+  },
   "devDependencies": {
     "@deepseek-ai/cordis": "^4.0.1",
     "@deepseek-ai/dsh-settings": "0.1.0-rc.7",

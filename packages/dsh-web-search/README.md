@@ -25,7 +25,7 @@ dsh plugin --profile web add "$PWD/packages/dsh-web-search"
 dsh plugin --profile desktop add "$PWD/packages/dsh-web-search"
 ```
 
-Restart `dsh web`. Settings has a **Web search** page. Turn **Custom search** off to keep DSH built-in `web_search` (`deepseek-official`) and `web_fetch` (`http`); turn it on to use Baidu / Doubao / Tavily / Exa / Serper. **Page extract** is independent: auto follows Tavily/Exa search, or pin Tavily Extract, Exa Contents, or DSH `http`.
+Restart `dsh web`. Settings has a **Web search** page. Turn **Custom search** off to keep DSH built-in `web_search` (`deepseek-official`) and `web_fetch` (`http`); turn it on to use Baidu / Doubao / Tavily / Exa / Serper. **Page content** is independent: auto follows Tavily/Exa search, or pin Tavily, Exa, or DSH `http`.
 
 ![Web search settings](docs/settings.png)
 
@@ -61,8 +61,8 @@ Installing the plugin can retarget official `web_search` at this package's facad
 - **On** (default): pick the search backend below
   - **Auto** (default): first configured backend in order Baidu → Doubao → Tavily → Exa → Serper. If that request fails with a recoverable error, the next configured backend is tried and the harness log records which one was skipped. An explicit backend does not fail over.
   - **Explicit**: Baidu / Doubao / Tavily / Exa / Serper
-- **Page extract** (independent of search)
-  - **Auto** (default): Tavily Extract or Exa Contents when that search backend is active; otherwise DSH built-in `http`
+- **Page content** (independent of search)
+  - **Auto** (default): Tavily or Exa when that search backend is active; otherwise DSH built-in `http`
   - **Built-in HTTP** / **Tavily** / **Exa**: pin `web_fetch` regardless of which search backend is active
 - Each backend card has **Test connection**, which runs a one-result `web_search` against that vendor. Status "configured" still means a key is present; the probe tells you whether the key works.
 
