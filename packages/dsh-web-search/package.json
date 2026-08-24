@@ -80,7 +80,7 @@
     "@deepseek-ai/schemastery": { "optional": true }
   },
   "dependencies": {
-    "searchsuite": "^0.1.1"
+    "searchsuite": "^0.1.2"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "^4.0.1",

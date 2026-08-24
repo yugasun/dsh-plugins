@@ -15,8 +15,8 @@ importers:
   packages/dsh-web-search:
     dependencies:
       searchsuite:
-        specifier: ^0.1.1
-        version: 0.1.1
+        specifier: ^0.1.2
+        version: 0.1.2
     devDependencies:
       '@deepseek-ai/cordis':
         specifier: ^4.0.1
@@ -999,8 +999,8 @@ packages:
     engines: {node: '>=18.0.0', npm: '>=8.0.0'}
     hasBin: true
 
-  searchsuite@0.1.1:
-    resolution: {integrity: sha512-I8GZnnUO0Kkxf8cXttteFzeOriqDN7BuUsNR+66EY8lJoBSjHG5u3FTwOgKmRe6NPmXWzGuf05zFqxzYghHvxg==}
+  searchsuite@0.1.2:
+    resolution: {integrity: sha512-2ncWsM1mBfpxIKTssVM/W0CjDyqXxGtSKLKHWdFYg/HWm+lupIUkY4v4S8hHO+Izrsy++V5xeP+GfMOMtH9eqg==}
     engines: {node: '>=24'}
 
   semver@7.8.5:
@@ -1956,7 +1956,7 @@ snapshots:
       '@rollup/rollup-win32-x64-msvc': 4.62.4
       fsevents: 2.3.3
 
-  searchsuite@0.1.1: {}
+  searchsuite@0.1.2: {}
 
   semver@7.8.5: {}
 
