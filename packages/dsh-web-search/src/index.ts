@@ -1,18 +1,14 @@
 import type { Context } from '@deepseek-ai/cordis'
 import { installSettingsSection, settingsNamespace } from './host.ts'
-import { BaiduSearchProvider } from './baidu.ts'
 import { Config, SETTINGS_NS } from './config.ts'
 import { credentialOverlay, type Credentials } from './credentials.ts'
-import { DoubaoSearchProvider } from './doubao.ts'
 import { launchEnvLookup } from './env.ts'
-import { ExaSearchProvider } from './exa.ts'
 import type { HostContext } from './host-types.ts'
 import { readHttpJson, requestMethod, type IncomingHttp } from './http-body.ts'
 import { parseProbeProvider, probeProvider } from './probe.ts'
 import { PluginFetchProvider, PluginSearchProvider } from './provider.ts'
 import { mergeSecrets, pinWebSeams, pluginStatus, resolveSecrets, selectActive, type ResolvedSecrets } from './select.ts'
-import { SerperSearchProvider } from './serper.ts'
-import { TavilySearchProvider } from './tavily.ts'
+import { SearchSuiteFetchProvider, SearchSuiteSearchProvider } from './searchsuite.ts'
 
 export const name = 'dsh-web-search'
 export const inject = ['web']
@@ -52,14 +48,12 @@ export function apply(ctx: Context, config: Config): void {
   })
   pinSeam()
 
-  const tavily = new TavilySearchProvider(resolve)
-  const exa = new ExaSearchProvider(resolve)
   const backends = {
-    baidu: new BaiduSearchProvider(resolve),
-    doubao: new DoubaoSearchProvider(resolve),
-    tavily,
-    exa,
-    serper: new SerperSearchProvider(resolve),
+    baidu: new SearchSuiteSearchProvider('baidu', resolve),
+    doubao: new SearchSuiteSearchProvider('doubao', resolve),
+    tavily: new SearchSuiteSearchProvider('tavily', resolve),
+    exa: new SearchSuiteSearchProvider('exa', resolve),
+    serper: new SearchSuiteSearchProvider('serper', resolve),
   }
 
   host.web.registerSearchProvider(new PluginSearchProvider(
@@ -69,7 +63,10 @@ export function apply(ctx: Context, config: Config): void {
     host.logger,
   ))
   host.web.registerFetchProvider(new PluginFetchProvider(
-    { tavily, exa },
+    {
+      tavily: new SearchSuiteFetchProvider('tavily', resolve),
+      exa: new SearchSuiteFetchProvider('exa', resolve),
+    },
     resolve,
     refreshOverlay,
     host.logger,
@@ -87,7 +84,7 @@ export function apply(ctx: Context, config: Config): void {
     promptCtx.systemPrompt?.section({
       name: 'plugin:dsh-web-search',
       order: 111,
-      text: 'Use web_search for live lookup and web_fetch for page content. Settings → Web search chooses DSH built-in DeepSeek search or a custom backend (Baidu, Doubao, Tavily, Exa, Serper). web_fetch is chosen separately (auto follows Tavily/Exa search; or pin Tavily Extract, Exa Contents, or DSH http). Custom keys live there and are stripped from the shell. Do not curl Tavily, Exa, or Serper, and do not look for TAVILY_API_KEY, EXA_API_KEY, or SERPER_API_KEY in env or config files.',
+      text: 'Use web_search for live lookup and web_fetch for page content. Settings → Web search chooses DSH built-in DeepSeek search or a custom backend (Baidu, Doubao, Tavily, Exa, Serper). web_fetch is chosen separately (auto follows Tavily/Exa search; or pin Tavily, Exa, or DSH http). Custom keys live there and are stripped from the shell. Do not curl Tavily, Exa, or Serper, and do not look for TAVILY_API_KEY, EXA_API_KEY, or SERPER_API_KEY in env or config files.',
     })
   })
 

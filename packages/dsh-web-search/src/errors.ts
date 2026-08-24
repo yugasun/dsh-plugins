@@ -1,10 +1,5 @@
 import { WebError } from './host.ts'
 
-export function isAbortError(error: unknown): boolean {
-  return (error instanceof DOMException && error.name === 'AbortError')
-    || (error instanceof Error && error.name === 'AbortError')
-}
-
 export function abortRequest(label: string, cause?: unknown): never {
   throw new WebError(
     `${label} aborted`,
@@ -59,13 +54,4 @@ export function firstNonEmpty(...values: Array<string | undefined | null>): stri
     if (value != null && value.trim().length > 0) return value.trim()
   }
   return ''
-}
-
-export function toIsoDate(value: string | undefined | null): string | undefined {
-  if (value == null) return undefined
-  const trimmed = value.trim()
-  if (trimmed.length === 0) return undefined
-  const parsed = Date.parse(trimmed.replace(' ', 'T'))
-  if (Number.isNaN(parsed)) return trimmed
-  return new Date(parsed).toISOString()
 }

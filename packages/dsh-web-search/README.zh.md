@@ -25,7 +25,7 @@ dsh plugin --profile web add "$PWD/packages/dsh-web-search"
 dsh plugin --profile desktop add "$PWD/packages/dsh-web-search"
 ```
 
-安装后请重启 `dsh web`。设置侧栏会出现 **网络搜索** 页。关闭 **自定义搜索** 则继续用 DSH 内置 `web_search` 和 `web_fetch`；开启后配置百度 / 豆包 / Tavily / Exa / Serper。**网页提取** 与搜索独立：自动跟随 Tavily/Exa 搜索，或固定 Tavily Extract、Exa Contents、DSH `http`。
+安装后请重启 `dsh web`。设置侧栏会出现 **网络搜索** 页。关闭 **自定义搜索** 则继续用 DSH 内置 `web_search` 和 `web_fetch`；开启后配置百度 / 豆包 / Tavily / Exa / Serper。**网页内容** 与搜索独立：自动跟随 Tavily/Exa 搜索，或固定 Tavily、Exa、DSH `http`。
 
 ![网络搜索设置界面](docs/settings.png)
 
