@@ -4,7 +4,7 @@
 
 Multi-provider **web search** for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness). It registers Baidu, Doubao, Tavily, Exa, and Serper backends into `ctx.web`. The model-facing `web_search` / `web_fetch` tools stay the official `@deepseek-ai/dsh-tool-web` schema.
 
-Compatible with DeepSeek Harness **0.1.0-rc.7**.
+Compatible with DeepSeek Harness **0.1.5+** (`ctx.settings.installSection`).
 
 [中文文档](README.zh.md)
 

@@ -4,7 +4,7 @@
 
 给 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的**多后端网页搜索**。向 `ctx.web` 注册百度、豆包、Tavily、Exa、Serper；模型侧仍使用官方 `web_search` / `web_fetch` 工具。
 
-兼容 DeepSeek Harness **0.1.0-rc.7**。
+兼容 DeepSeek Harness **0.1.5+**（`ctx.settings.installSection`）。
 
 [English](README.md)
 

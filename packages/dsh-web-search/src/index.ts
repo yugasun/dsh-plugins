@@ -1,5 +1,4 @@
 import type { Context } from '@deepseek-ai/cordis'
-import { installSettingsSection, settingsNamespace } from './host.ts'
 import { Config, SETTINGS_NS } from './config.ts'
 import { credentialOverlay, type Credentials } from './credentials.ts'
 import { launchEnvLookup } from './env.ts'
@@ -14,8 +13,6 @@ export const name = 'dsh-web-search'
 export const inject = ['web']
 export { Config, SETTINGS_NS }
 export type { Config as WebSearchConfig } from './config.ts'
-
-const NS = settingsNamespace(SETTINGS_NS)
 
 export function apply(ctx: Context, config: Config): void {
   const host = ctx as unknown as HostContext
@@ -37,14 +34,16 @@ export function apply(ctx: Context, config: Config): void {
 
   const pinSeam = () => pinWebSeams(host.web, source(), resolve().secrets)
 
-  installSettingsSection(ctx, NS, Config, config, {
-    setSource: (current) => {
-      source = current
-      pinSeam()
-    },
-    onChange: () => {
-      pinSeam()
-    },
+  host.inject(['settings'], (settingsCtx) => {
+    settingsCtx.settings?.installSection(ctx, SETTINGS_NS, Config, config, {
+      setSource: (current) => {
+        source = current as () => Config
+        pinSeam()
+      },
+      onChange: () => {
+        pinSeam()
+      },
+    })
   })
   pinSeam()
 
