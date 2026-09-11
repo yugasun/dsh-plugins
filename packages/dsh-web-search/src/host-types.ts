@@ -34,6 +34,19 @@ export interface WebRuntime {
   }): () => void
 }
 
+export interface SettingsService {
+  installSection(
+    owner: unknown,
+    ns: string,
+    schema: unknown,
+    entry: unknown,
+    hooks: {
+      setSource(current: () => unknown): void
+      onChange(): void
+    },
+  ): void
+}
+
 export interface HostContext {
   web: WebRuntime
   get(name: string): unknown
@@ -41,6 +54,7 @@ export interface HostContext {
   effect(callback: () => (() => void) | void, label?: string): void
   on?(event: string, listener: (...args: unknown[]) => void): () => void
   logger?: Logger
+  settings?: SettingsService
   webServer?: WebServer
   systemPrompt?: {
     section(section: { name: string; order: number; text: string }): () => void
