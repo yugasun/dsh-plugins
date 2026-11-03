@@ -24,7 +24,7 @@ pnpm build
 packages/dsh-web-search   @yugasun/dsh-web-search
 ```
 
-Cordis plugin ids (`export const name`, settings namespaces, patch `id`) stay unscoped (`dsh-web-search`) so existing `~/.dsh/settings.yaml` keys keep working. The patch `name` and `window.__ModuleLoader__.load` id must be the scoped npm name (`@yugasun/dsh-web-search`): that is the specifier Cordis imports and the key DSH uses for the client module table.
+Cordis plugin ids (`export const name`, settings namespaces, patch `id`) stay unscoped (`dsh-web-search`). The patch `name` and `window.__ModuleLoader__.load` id must be the scoped npm name (`@yugasun/dsh-web-search`): that is the specifier Cordis imports and the key DSH uses for the client module table.
 
 Do not publish the repository root (`private: true`).
 
@@ -63,7 +63,7 @@ Adding a new package requires a one-time initial npm publication and Trusted Pub
 
 这是一个 pnpm monorepo：每个插件在 `packages/<name>`，以 `@yugasun/<name>` 独立发 npm。仓库根目录是 `private`，不要发布。
 
-Cordis 插件 id 和设置命名空间保持无 scope（`dsh-web-search`），避免已有 `settings.yaml` 失效。`cordis.patch.yml` 的 `name` 和 `window.__ModuleLoader__.load` 的 id 必须是带 scope 的 npm 包名（`@yugasun/dsh-web-search`）：这是 Cordis 真正 import 的标识，也是 DSH 客户端模块表的 key。
+Cordis 插件 id 和设置命名空间保持无 scope（`dsh-web-search`）。`cordis.patch.yml` 的 `name` 和 `window.__ModuleLoader__.load` 的 id 必须是带 scope 的 npm 包名（`@yugasun/dsh-web-search`）：这是 Cordis 真正 import 的标识，也是 DSH 客户端模块表的 key。
 
 英文说明写在 `README.md`（npm 展示这份），中文写在 `README.zh.md`，改安装步骤或行为时请两边一起改。
 

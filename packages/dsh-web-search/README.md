@@ -4,7 +4,7 @@
 
 Multi-provider **web search** for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness). It registers Baidu, Doubao, Tavily, Exa, and Serper backends into `ctx.web`. The model-facing `web_search` / `web_fetch` tools stay the official `@deepseek-ai/dsh-tool-web` schema.
 
-Compatible with DeepSeek Harness **0.1.0-rc.7**.
+Compatible with DeepSeek Harness **0.2.1-rc.5** and Node.js **24+**.
 
 [中文文档](README.zh.md)
 
@@ -51,7 +51,7 @@ dsh plugin --profile web remove @yugasun/dsh-web-search
 | `exa` | [Exa Search](https://docs.exa.ai) `POST /search` and [Contents](https://docs.exa.ai/reference/get-contents) `POST /contents` | `EXA_API_KEY` | Search returns **links only** (no answer). Default provider id is `exa`; change `exaProviderId` if the official `@deepseek-ai/dsh-web-search-exa` is also installed. Available as a `web_fetch` backend. |
 | `serper` | [Serper](https://serper.dev) Google Search `POST /search` | `SERPER_API_KEY` | Organic titles, links, and snippets. An answer box or knowledge-graph description is returned as `content` when present. Optional `serperGl` / `serperHl` set country and language. Not a `web_fetch` backend. |
 
-Keys are read in this order: plugin settings (`~/.dsh/settings.yaml`), DSH credentials (`TAVILY_API_KEY` and friends), then the launch environment / `~/.dsh/.env`. Settings secrets are never echoed back to the client. **Clear** in Settings, or emptying the field, unsets that key from the YAML document. A `export TAVILY_API_KEY=…` inside an agent bash tool does **not** reach the harness process.
+Keys are read in this order: plugin configuration in the active profile, DSH credentials (`TAVILY_API_KEY` and friends), then the launch environment / `~/.dsh/.env`. DeepSeek Harness imports legacy `~/.dsh/settings.yaml` settings into the active profile once, then renames the file to `.imported`. Settings secrets are never echoed back to the client. **Clear** in Settings, or emptying the field, unsets that key from the active profile plugin configuration. A `export TAVILY_API_KEY=…` inside an agent bash tool does **not** reach the harness process.
 
 ## Selection
 

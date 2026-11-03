@@ -12,8 +12,8 @@ interface LocaleService {
   bind(namespace: string): (key: string) => string
 }
 
-interface SettingsScopeBinder {
-  bind<T>(spec: { namespace: string }): SettingsScope<T>
+interface ConfigForms {
+  get<T>(entryId: string): SettingsScope<T>
 }
 
 interface SlotsService {
@@ -25,18 +25,18 @@ interface ClientContext {
   effect(callback: () => unknown, label?: string): void
   locale: LocaleService
   slots: SlotsService
-  settingsScope: SettingsScopeBinder
+  configForms: ConfigForms
 }
 
 export const name = 'dsh-web-search'
-export const inject = ['slots', 'locale', 'connection', 'remote', 'settingsScope']
+export const inject = ['slots', 'locale', 'connection', 'remote', 'configForms']
 
 export function apply(ctx: ClientContext): void {
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'dsh-web-search: dictionaries')
   ctx.effect(() => ensureSearchStyles(), 'dsh-web-search: styles')
   ctx.effect(() => watchSettingsNavIcon(), 'dsh-web-search: nav icon')
   const t = ctx.locale.bind(NS)
-  const scope = ctx.settingsScope.bind<ClientConfig>({ namespace: NS })
+  const scope = ctx.configForms.get<ClientConfig>(NS)
 
   ctx.slots.inject('settings.section', () =>
     ctx.slots.register(

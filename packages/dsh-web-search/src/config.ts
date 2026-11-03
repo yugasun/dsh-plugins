@@ -53,7 +53,7 @@ export const EXA_DEFAULT_PROVIDER_ID = 'exa'
 export const EXA_DEFAULT_HIGHLIGHTS = 1
 export const SERPER_DEFAULT_BASE_URL = 'https://google.serper.dev'
 
-export const Config: SchemaType<Config> = Schema.object({
+export const Config: SchemaType<Config, Config, 'volatile'> = Schema.object({
   customSearch: Schema.boolean().default(true).description(
     'When on, web_search uses a backend configured on this page. When off, it uses DSH built-in DeepSeek search.',
   ),
@@ -86,7 +86,7 @@ export const Config: SchemaType<Config> = Schema.object({
   serperBaseURL: Schema.string().default(SERPER_DEFAULT_BASE_URL),
   serperGl: Schema.string().default('').description('Country code for geolocation (ISO 3166-1 alpha-2).'),
   serperHl: Schema.string().default('').description('Language code for results (ISO 639-1).'),
-})
+}).volatile()
 
 export const DEFAULT_CONFIG: Config = {
   customSearch: true,

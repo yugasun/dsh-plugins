@@ -4,7 +4,7 @@ Independently installable [DeepSeek Harness](https://github.com/deepseek-ai/deep
 
 Each directory under `packages/` is its own `dsh.bundle`. The repository root is **not** a plugin. npm packages use the `@yugasun` scope.
 
-Compatible with DeepSeek Harness **0.1.0-rc.7**.
+Compatible with DeepSeek Harness **0.2.1-rc.5** and Node.js **24+**.
 
 [中文文档](README.zh.md)
 

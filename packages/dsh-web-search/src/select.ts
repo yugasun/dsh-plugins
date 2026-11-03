@@ -2,6 +2,8 @@ import { AUTO_FETCH_ORDER, AUTO_PROVIDER_ORDER, baiduSearchModeOf, doubaoBaseUrl
 import type { EnvLookup } from './env.ts'
 import { firstEnv } from './env.ts'
 import { firstNonEmpty, isPositiveInteger, isValidBaseUrl } from './errors.ts'
+import { createVolatile, updateVolatile } from './host.ts'
+import type { WebRuntime } from './host-types.ts'
 import {
   BUILTIN_FETCH_PROVIDER_ID,
   BUILTIN_SEAM_PROVIDER_ID,
@@ -96,11 +98,6 @@ export function configuredSeamProviderId(config: Config): typeof SEAM_PROVIDER_I
   return config.customSearch !== false ? SEAM_PROVIDER_ID : BUILTIN_SEAM_PROVIDER_ID
 }
 
-/** Point `ctx.web` at this plugin or at DSH built-in search. */
-export function pinWebSearchProvider(web: { searchProviderId?: string }, config: Config): void {
-  web.searchProviderId = configuredSeamProviderId(config)
-}
-
 export function isFetchBackend(id: ProviderId | null): id is FetchProviderId {
   return id === 'tavily' || id === 'exa'
 }
@@ -176,21 +173,13 @@ export function fetchFacadeAvailable(config: Config, secrets: ResolvedSecrets): 
   return selectFetchBackend(config, secrets) !== null
 }
 
-export function pinWebFetchProvider(
-  web: { fetchProviderId?: string },
-  config: Config,
-  secrets: ResolvedSecrets,
-): void {
-  web.fetchProviderId = configuredFetchProviderId(config, secrets)
-}
-
 export function pinWebSeams(
-  web: { searchProviderId?: string; fetchProviderId?: string },
+  web: Pick<WebRuntime, 'config'>,
   config: Config,
   secrets: ResolvedSecrets,
 ): void {
-  pinWebSearchProvider(web, config)
-  pinWebFetchProvider(web, config, secrets)
+  updateVolatile(web.config.searchProvider, createVolatile(configuredSeamProviderId(config)))
+  updateVolatile(web.config.fetchProvider, createVolatile(configuredFetchProviderId(config, secrets)))
 }
 
 /** The facade is selectable when custom search is on and a backend is usable or pinned. */

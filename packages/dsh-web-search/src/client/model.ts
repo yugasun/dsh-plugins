@@ -56,11 +56,18 @@ export interface ProbeResult {
 }
 
 export interface SettingsScope<T> {
-  getSnapshot(): { status: string; value: T | undefined; writable: boolean }
+  getSnapshot(): {
+    status: 'loading' | 'ready' | 'unavailable'
+    value: T | undefined
+    base: unknown
+    user: unknown
+    revision: number | undefined
+    writable: boolean
+  }
   subscribe(listener: () => void): () => void
-  set(field: string, value: unknown): Promise<void>
-  /** Drop a user-layer field so it is removed from ~/.dsh/settings.yaml. */
-  unset(field: string): Promise<void>
+  set(field: string, value: unknown): Promise<boolean>
+  /** Drop a user-layer field so it is removed from the active profile plugin configuration. */
+  unset(field: string): Promise<boolean>
 }
 
 export const EMPTY_STATUS: PluginStatus = {
