@@ -1,5 +1,5 @@
-import type { Context } from '@deepseek-ai/cordis'
-import { installSettingsSection, settingsNamespace } from './host.ts'
+import type { Context, Volatile } from '@deepseek-ai/cordis'
+import type {} from '@deepseek-ai/dsh-settings'
 import { Config, SETTINGS_NS } from './config.ts'
 import { credentialOverlay, type Credentials } from './credentials.ts'
 import { launchEnvLookup } from './env.ts'
@@ -11,15 +11,13 @@ import { mergeSecrets, pinWebSeams, pluginStatus, resolveSecrets, selectActive, 
 import { SearchSuiteFetchProvider, SearchSuiteSearchProvider } from './searchsuite.ts'
 
 export const name = 'dsh-web-search'
-export const inject = ['web']
+export const inject = ['web', 'settings']
 export { Config, SETTINGS_NS }
 export type { Config as WebSearchConfig } from './config.ts'
 
-const NS = settingsNamespace(SETTINGS_NS)
-
-export function apply(ctx: Context, config: Config): void {
+export function apply(ctx: Context, config: Volatile<Config>): void {
   const host = ctx as unknown as HostContext
-  let source = (): Config => config
+  const source = (): Config => config.get()
   let overlay: Partial<ResolvedSecrets> = {}
 
   const resolve = () => {
@@ -37,14 +35,9 @@ export function apply(ctx: Context, config: Config): void {
 
   const pinSeam = () => pinWebSeams(host.web, source(), resolve().secrets)
 
-  installSettingsSection(ctx, NS, Config, config, {
-    setSource: (current) => {
-      source = current
-      pinSeam()
-    },
-    onChange: () => {
-      pinSeam()
-    },
+  ctx.effect(() => ctx.settings.configure({ auto: false }), 'dsh-web-search: settings')
+  host.on?.('settings/document-updated', (entryId) => {
+    if (entryId === SETTINGS_NS) pinSeam()
   })
   pinSeam()
 

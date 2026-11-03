@@ -4,7 +4,7 @@
 
 `packages/` 下每个目录都是完整的 `dsh.bundle`——**根目录不是插件**。npm 包统一使用 `@yugasun` scope。
 
-兼容 DeepSeek Harness **0.1.0-rc.7**。
+兼容 DeepSeek Harness **0.2.1-rc.5**，要求 Node.js **24+**。
 
 [English](README.md)
 

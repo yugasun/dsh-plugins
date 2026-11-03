@@ -7,8 +7,8 @@
 # specifier Cordis actually imports — it must match package.json "name".
 #
 # This file must stay a plain insert (id + name only). dshmarket hot-mount
-# cannot apply config or expression rows. `apply()` retargets
-# `ctx.web.searchProviderId` / `fetchProviderId` via pinWebSeams.
+# cannot apply config or expression rows. `apply()` retargets the web runtime's
+# volatile search/fetch selection references via pinWebSeams.
 - insert:
     - id: dsh-web-search
       name: '@yugasun/dsh-web-search'

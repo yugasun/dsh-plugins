@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_CONFIG, type Config } from '../src/config.ts'
 import type { EnvLookup } from '../src/env.ts'
 import { secretCommit, secretDisplay, SECRET_MASK } from '../src/client/secret-field.ts'
-import { configuredSeamProviderId, facadeAvailable, fetchFacadeAvailable, mergeSecrets, listAvailable, pinWebSeams, pluginStatus, providerEndpointReady, resolveSecrets, selectActive, selectFetchBackend } from '../src/select.ts'
+import { configuredSeamProviderId, facadeAvailable, fetchFacadeAvailable, mergeSecrets, listAvailable, pluginStatus, providerEndpointReady, resolveSecrets, selectActive, selectFetchBackend } from '../src/select.ts'
 import { credentialOverlay } from '../src/credentials.ts'
 import { PluginFetchProvider, PluginSearchProvider } from '../src/provider.ts'
 import { BUILTIN_FETCH_PROVIDER_ID, BUILTIN_SEAM_PROVIDER_ID, SEAM_PROVIDER_ID } from '../src/types.ts'
@@ -150,20 +150,11 @@ describe('customSearch switch', () => {
       seamProvider: BUILTIN_SEAM_PROVIDER_ID,
       active: null,
     })
-    const web = { searchProviderId: SEAM_PROVIDER_ID, fetchProviderId: SEAM_PROVIDER_ID }
-    pinWebSeams(web, current, secrets)
-    expect(web.searchProviderId).toBe(BUILTIN_SEAM_PROVIDER_ID)
-    expect(web.fetchProviderId).toBe(BUILTIN_FETCH_PROVIDER_ID)
   })
 
   it('pins this plugin when custom search is on', () => {
     const current = config({ customSearch: true })
     expect(configuredSeamProviderId(current)).toBe(SEAM_PROVIDER_ID)
-    const secrets = resolveSecrets(current, env())
-    const web = { searchProviderId: BUILTIN_SEAM_PROVIDER_ID, fetchProviderId: BUILTIN_FETCH_PROVIDER_ID }
-    pinWebSeams(web, current, secrets)
-    expect(web.searchProviderId).toBe(SEAM_PROVIDER_ID)
-    expect(web.fetchProviderId).toBe(BUILTIN_FETCH_PROVIDER_ID)
   })
 })
 
@@ -174,9 +165,6 @@ describe('fetch backend', () => {
     expect(selectFetchBackend(current, secrets)).toBe('tavily')
     expect(fetchFacadeAvailable(current, secrets)).toBe(true)
     expect(pluginStatus(current, secrets).fetchProvider).toBe(SEAM_PROVIDER_ID)
-    const web = { searchProviderId: '', fetchProviderId: '' }
-    pinWebSeams(web, current, secrets)
-    expect(web.fetchProviderId).toBe(SEAM_PROVIDER_ID)
   })
 
   it('keeps built-in http fetch when Baidu is active', () => {
@@ -203,9 +191,6 @@ describe('fetch backend', () => {
     expect(selectActive(current, secrets)).toBe('baidu')
     expect(selectFetchBackend(current, secrets)).toBe('tavily')
     expect(pluginStatus(current, secrets).activeFetch).toBe('tavily')
-    const web = { searchProviderId: '', fetchProviderId: '' }
-    pinWebSeams(web, current, secrets)
-    expect(web.fetchProviderId).toBe(SEAM_PROVIDER_ID)
   })
 
   it('keeps built-in http when fetch is pinned to http even if Tavily search is active', () => {

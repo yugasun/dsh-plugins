@@ -17,7 +17,7 @@ if (!fs.existsSync(source)) {
 /**
  * DSH keys the client module table on the Cordis loader entry `name`
  * (the npm specifier in cordis.patch.yml), which must match package.json
- * `name`. Keep `export const name` / patch `id` unscoped for settings.yaml.
+ * `export const name` / patch `id` stay unscoped for plugin identity.
  */
 function loaderEntryName() {
   const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'))

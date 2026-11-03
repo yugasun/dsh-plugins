@@ -4,7 +4,7 @@
 
 给 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的**多后端网页搜索**。向 `ctx.web` 注册百度、豆包、Tavily、Exa、Serper；模型侧仍使用官方 `web_search` / `web_fetch` 工具。
 
-兼容 DeepSeek Harness **0.1.0-rc.7**。
+兼容 DeepSeek Harness **0.2.1-rc.5**，要求 Node.js **24+**。
 
 [English](README.md)
 
@@ -51,9 +51,10 @@ dsh plugin --profile web remove @yugasun/dsh-web-search
 | `exa` | Exa Search `POST /search` 与 Contents `POST /contents` | `EXA_API_KEY` | 搜索**只返回链接，没有 answer**。默认 id 为 `exa`；若同时安装了官方 Exa 包，请改 `exaProviderId`。可作为 `web_fetch` 后端。 |
 | `serper` | [Serper](https://serper.dev) Google 搜索 `POST /search` | `SERPER_API_KEY` | 返回网页标题、链接和摘要。有 answer box 或知识图谱描述时作为 `content`。可选 `serperGl` / `serperHl` 指定国家和地区与语言。不能作为 `web_fetch` 后端。 |
 
-密钥可以写在插件设置（`~/.dsh/settings.yaml`）、DSH 凭据（`TAVILY_API_KEY` 等）或 `~/.dsh/.env`。设置里的密钥不会回显到前端。设置页点 **清除** 或清空输入框会从 YAML 里删掉该项。
+密钥读取顺序：当前 profile 的插件配置、DSH 凭据（如 `TAVILY_API_KEY`），然后是启动环境变量 / `~/.dsh/.env`。DeepSeek Harness 会将旧版 `~/.dsh/settings.yaml` 设置一次性导入当前 profile，随后把该文件重命名为 `.imported`。设置里的密钥不会回显到前端。点设置页的 **清除** 或清空输入框，会从当前 profile 的插件配置中取消设置该密钥。
 
-「设置 → 网络搜索」里的 **自定义搜索** 开关决定走 DSH 内置还是本插件。开启后默认 **自动** 按 百度 → 豆包 → Tavily → Exa → Serper 选用第一个已配置的；请求失败会试下一家，并在 harness 日志里记下跳过了谁，指定某一家则不会。**网页提取** 与搜索独立：自动时，当前搜索是 Tavily / Exa 才走对应提取，否则用内置 `http`；也可以固定 Tavily / Exa / 内置 HTTP。每张卡片有 **测试连接**。Agent 里 `export TAVILY_API_KEY=…` **不会**进入 Harness 进程。
+「设置 → 网络搜索」里的 **自定义搜索** 开关决定走 DSH 内置还是本插件。开启后默认 **自动** 按 百度 → 豆包 → Tavily → Exa → Serper 选用第一个已配置的；请求失败会试下一家，并在 harness 日志里记下跳过了谁，指定某一家则不会。**网页提取** 与搜索独立：自动时，当前搜索是 Tavily / Exa 才走对应提取，否则用内置 `http`；也可以固定 Tavily / Exa / 内置 HTTP。每张卡片有 **测试连接**。
+[...]
 
 ## 开发
 

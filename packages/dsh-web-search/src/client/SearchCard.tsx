@@ -431,13 +431,17 @@ export function SearchCard(props: SearchCardProps) {
     status.providers.find((provider) => provider.id === id)?.configured === true
   const anyConfigured = VENDOR_ORDER.some((id) => configured(id))
   const set = (field: string, next: unknown) => {
-    void props.scope.set(field, next).then(() => refresh())
+    void props.scope.set(field, next).then((written) => {
+      if (written) void refresh()
+    })
   }
   const saveSecret = (field: string, next: string) => {
     const write = next.length === 0 && typeof props.scope.unset === 'function'
       ? props.scope.unset(field)
       : props.scope.set(field, next)
-    void write.then(() => refresh())
+    void write.then((written) => {
+      if (written) void refresh()
+    })
   }
   const initialTab: ProviderId = firstOpenProvider(
     value.searchProvider,

@@ -3,7 +3,7 @@ import { createRequire } from 'node:module'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import type * as Settings from '@deepseek-ai/dsh-settings'
+import type * as Cosmokit from '@deepseek-ai/cosmokit'
 import type * as Web from '@deepseek-ai/dsh-web'
 import type SchemaType from '@deepseek-ai/schemastery'
 
@@ -53,14 +53,11 @@ function named<T>(mod: Record<string, unknown>, key: string): T {
   return value as T
 }
 
-const settings = await loadNamespace('@deepseek-ai/dsh-settings')
+const cosmokit = await loadNamespace('@deepseek-ai/cosmokit')
 const web = await loadNamespace('@deepseek-ai/dsh-web')
 const schemaMod = await loadNamespace('@deepseek-ai/schemastery')
 
-export const installSettingsSection = named<typeof Settings.installSettingsSection>(
-  settings,
-  'installSettingsSection',
-)
-export const settingsNamespace = named<typeof Settings.settingsNamespace>(settings, 'settingsNamespace')
+export const createVolatile = named<typeof Cosmokit.createVolatile>(cosmokit, 'createVolatile')
+export const updateVolatile = named<typeof Cosmokit.updateVolatile>(cosmokit, 'updateVolatile')
 export const WebError = named<typeof Web.WebError>(web, 'WebError')
 export const Schema = (schemaMod.default ?? schemaMod) as typeof SchemaType

@@ -93,7 +93,7 @@ export const zh = {
   exaProviderId: 'Provider id',
   exaProviderIdHint: '默认 exa。与官方 Exa 插件共存时改成别的 id。',
   clearKey: '清除',
-  secretHint: '已保存的密钥显示为密码点，不会回显明文。输入新密钥后按回车或点别处保存。点「清除」或清空输入框会从 ~/.dsh/settings.yaml 删除该项。密钥也可放在凭据服务或 ~/.dsh/.env，不要在 agent 里 export。请用 web_search / web_fetch，不要 curl。',
+  secretHint: '已保存的密钥显示为密码点，不会回显明文。输入新密钥后按回车或点别处保存。点「清除」或清空输入框会从当前 profile 的插件配置中取消设置该项。旧版 ~/.dsh/settings.yaml 由 Harness 一次性导入当前 profile 后重命名为 .imported。密钥也可放在凭据服务或 ~/.dsh/.env，不要在 agent 里 export。请用 web_search / web_fetch，不要 curl。',
   secretMore: '密钥说明',
   saved: '已保存',
 }
@@ -193,7 +193,7 @@ export const en = {
   exaProviderId: 'Provider id',
   exaProviderIdHint: 'Default is exa. Use another id if the official Exa plugin is also loaded.',
   clearKey: 'Clear',
-  secretHint: 'Saved keys show as password dots and are never echoed back. Type a new key and press Enter or click away to save. Clear, or empty the field, removes that key from ~/.dsh/settings.yaml. Keys can also live in credentials or ~/.dsh/.env — do not export them inside an agent. Use web_search and web_fetch, do not curl.',
+  secretHint: 'Saved keys show as password dots and are never echoed back. Type a new key and press Enter or click away to save. Clear, or empty the field, unsets that key from the active profile plugin configuration. DeepSeek Harness imports legacy ~/.dsh/settings.yaml into the active profile once, then renames the file to .imported. Keys can also live in credentials or ~/.dsh/.env — do not export them inside an agent. Use web_search and web_fetch, do not curl.',
   secretMore: 'About keys',
   saved: 'Saved',
 }

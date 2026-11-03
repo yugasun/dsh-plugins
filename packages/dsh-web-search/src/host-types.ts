@@ -1,3 +1,5 @@
+import type { Volatile } from '@deepseek-ai/cordis'
+
 export interface Logger {
   warn(message: string): void
   info?(message: string): void
@@ -16,12 +18,11 @@ export interface WebServer {
 }
 
 export interface WebRuntime {
-  /**
-   * Runtime-writable even though `@deepseek-ai/dsh-web` types it private.
-   * Selection reads these fields on every `search()` / `fetch()`.
-   */
-  searchProviderId?: string
-  fetchProviderId?: string
+  /** rc.5 selects providers from these stable volatile references. */
+  config: {
+    searchProvider: Volatile<string | undefined>
+    fetchProvider: Volatile<string | undefined>
+  }
   registerSearchProvider(provider: {
     readonly id: string
     available(): boolean
