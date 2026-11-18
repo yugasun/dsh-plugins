@@ -1,5 +1,11 @@
 # @yugasun/dsh-web-search
 
+## 0.3.0
+
+### Minor Changes
+
+- e94f4ee: Add AnySearch as a web search provider. Select AnySearch to search with its anonymous quota, or configure an API key to include it in automatic provider selection.
+
 ## 0.2.6
 
 ### Patch Changes
