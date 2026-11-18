@@ -19,6 +19,7 @@ const RESULT_LIMITS: Record<ProviderId, number> = {
   tavily: 20,
   exa: 100,
   serper: 100,
+  anysearch: 10,
 }
 
 const EXA_MAX_CHARACTERS = 100_000
@@ -77,6 +78,10 @@ export function providerConfig(config: Config, secrets: ResolvedSecrets): Provid
     serper: {
       apiKey: secrets.serperApiKey,
       baseUrl: config.serperBaseURL,
+    },
+    anysearch: {
+      ...(secrets.anysearchApiKey ? { apiKey: secrets.anysearchApiKey } : {}),
+      baseUrl: config.anysearchBaseURL,
     },
   }
 }
@@ -144,6 +149,8 @@ function requestFor(
         ...(Object.keys(options).length === 0 ? {} : { providerOptions: options }),
       }
     }
+    case 'anysearch':
+      return { ...common, provider }
   }
 }
 

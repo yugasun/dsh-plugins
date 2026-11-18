@@ -1,5 +1,5 @@
-export type SearchProviderChoice = 'auto' | 'baidu' | 'doubao' | 'tavily' | 'exa' | 'serper'
-export type ProviderId = 'baidu' | 'doubao' | 'tavily' | 'exa' | 'serper'
+export type SearchProviderChoice = 'auto' | ProviderId
+export type ProviderId = 'baidu' | 'doubao' | 'tavily' | 'exa' | 'serper' | 'anysearch'
 export type FetchProviderChoice = 'auto' | 'http' | 'tavily' | 'exa'
 export type FetchProviderId = 'tavily' | 'exa'
 
@@ -28,6 +28,8 @@ export interface ClientConfig {
   serperBaseURL: string
   serperGl: string
   serperHl: string
+  anysearchApiKey: string
+  anysearchBaseURL: string
 }
 
 export interface ProviderStatus {
@@ -84,6 +86,7 @@ export const EMPTY_STATUS: PluginStatus = {
     { id: 'tavily', available: false, configured: false },
     { id: 'exa', available: false, configured: false },
     { id: 'serper', available: false, configured: false },
+    { id: 'anysearch', available: false, configured: false },
   ],
 }
 
@@ -94,6 +97,7 @@ export const PROVIDER_OPTIONS: Array<{ id: SearchProviderChoice; labelKey: strin
   { id: 'tavily', labelKey: 'tavily' },
   { id: 'exa', labelKey: 'exa' },
   { id: 'serper', labelKey: 'serper' },
+  { id: 'anysearch', labelKey: 'anysearch' },
 ]
 
 export const FETCH_OPTIONS: Array<{ id: FetchProviderChoice; labelKey: string }> = [
@@ -103,7 +107,7 @@ export const FETCH_OPTIONS: Array<{ id: FetchProviderChoice; labelKey: string }>
   { id: 'exa', labelKey: 'exa' },
 ]
 
-export const VENDOR_ORDER: ProviderId[] = ['baidu', 'doubao', 'tavily', 'exa', 'serper']
+export const VENDOR_ORDER: ProviderId[] = ['baidu', 'doubao', 'tavily', 'exa', 'serper', 'anysearch']
 
 /** Official consoles for creating an API key. */
 export const PROVIDER_KEY_URLS: Record<ProviderId, string> = {
@@ -112,6 +116,7 @@ export const PROVIDER_KEY_URLS: Record<ProviderId, string> = {
   tavily: 'https://app.tavily.com',
   exa: 'https://dashboard.exa.ai/api-keys',
   serper: 'https://serper.dev/api-key',
+  anysearch: 'https://anysearch.com',
 }
 
 export const DOUBAO_DOCS = {

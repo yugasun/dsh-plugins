@@ -37,7 +37,7 @@ describe('vendorTabLayout', () => {
   it('keeps the selected vendor in a contiguous visible window', () => {
     const layout = vendorTabLayout(VENDOR_ORDER, 'exa', 2)
     expect(layout.visible).toEqual(['exa', 'serper'])
-    expect(layout.overflow).toEqual(['baidu', 'doubao', 'tavily'])
+    expect(layout.overflow).toEqual(['baidu', 'doubao', 'tavily', 'anysearch'])
     expect(layout.scrollAll).toBe(false)
   })
 
@@ -52,7 +52,10 @@ describe('vendorTabLayout', () => {
     expect(tavily.visible).toEqual(['tavily', 'exa'])
 
     const serper = vendorTabLayout(VENDOR_ORDER, 'serper', 2)
-    expect(serper.visible).toEqual(['exa', 'serper'])
+    expect(serper.visible).toEqual(['serper', 'anysearch'])
+
+    const anysearch = vendorTabLayout(VENDOR_ORDER, 'anysearch', 2)
+    expect(anysearch.visible).toEqual(['serper', 'anysearch'])
   })
 
   it('uses horizontal scroll when nothing fits beside More', () => {

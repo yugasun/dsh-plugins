@@ -20,6 +20,7 @@ export interface ResolvedSecrets {
   tavilyApiKey: string
   exaApiKey: string
   serperApiKey: string
+  anysearchApiKey: string
 }
 
 export const SECRET_ENVS: Record<keyof ResolvedSecrets, readonly string[]> = {
@@ -28,6 +29,7 @@ export const SECRET_ENVS: Record<keyof ResolvedSecrets, readonly string[]> = {
   tavilyApiKey: ['TAVILY_API_KEY'],
   exaApiKey: ['EXA_API_KEY'],
   serperApiKey: ['SERPER_API_KEY'],
+  anysearchApiKey: ['ANYSEARCH_API_KEY'],
 }
 
 export function resolveSecrets(config: Config, env: EnvLookup): ResolvedSecrets {
@@ -37,6 +39,7 @@ export function resolveSecrets(config: Config, env: EnvLookup): ResolvedSecrets 
     tavilyApiKey: firstNonEmpty(config.tavilyApiKey, firstEnv(env, SECRET_ENVS.tavilyApiKey)),
     exaApiKey: firstNonEmpty(config.exaApiKey, firstEnv(env, SECRET_ENVS.exaApiKey)),
     serperApiKey: firstNonEmpty(config.serperApiKey, firstEnv(env, SECRET_ENVS.serperApiKey)),
+    anysearchApiKey: firstNonEmpty(config.anysearchApiKey, firstEnv(env, SECRET_ENVS.anysearchApiKey)),
   }
 }
 
@@ -47,6 +50,7 @@ export function mergeSecrets(base: ResolvedSecrets, overlay: Partial<ResolvedSec
     tavilyApiKey: firstNonEmpty(base.tavilyApiKey, overlay.tavilyApiKey),
     exaApiKey: firstNonEmpty(base.exaApiKey, overlay.exaApiKey),
     serperApiKey: firstNonEmpty(base.serperApiKey, overlay.serperApiKey),
+    anysearchApiKey: firstNonEmpty(base.anysearchApiKey, overlay.anysearchApiKey),
   }
 }
 
@@ -64,6 +68,8 @@ export function providerConfigured(id: ProviderId, secrets: ResolvedSecrets): bo
       return looksLikeSecret(secrets.exaApiKey)
     case 'serper':
       return looksLikeSecret(secrets.serperApiKey)
+    case 'anysearch':
+      return looksLikeSecret(secrets.anysearchApiKey)
   }
 }
 
@@ -87,11 +93,14 @@ export function providerEndpointReady(id: ProviderId, config: Config): boolean {
         && isPositiveInteger(config.exaHighlightsPerResult)
     case 'serper':
       return isValidBaseUrl(config.serperBaseURL)
+    case 'anysearch':
+      return isValidBaseUrl(config.anysearchBaseURL)
   }
 }
 
 export function providerUsable(id: ProviderId, config: Config, secrets: ResolvedSecrets): boolean {
-  return providerConfigured(id, secrets) && providerEndpointReady(id, config)
+  return providerEndpointReady(id, config)
+    && (providerConfigured(id, secrets) || (id === 'anysearch' && config.searchProvider === 'anysearch'))
 }
 
 export function configuredSeamProviderId(config: Config): typeof SEAM_PROVIDER_ID | typeof BUILTIN_SEAM_PROVIDER_ID {
@@ -191,7 +200,7 @@ export function facadeAvailable(config: Config, secrets: ResolvedSecrets): boole
 }
 
 export function listAvailable(config: Config, secrets: ResolvedSecrets): ProviderId[] {
-  return AUTO_PROVIDER_ORDER.filter((id) => providerUsable(id, config, secrets))
+  return AUTO_PROVIDER_ORDER.filter((id) => providerConfigured(id, secrets) && providerEndpointReady(id, config))
 }
 
 export function selectActive(config: Config, secrets: ResolvedSecrets): ProviderId | null {

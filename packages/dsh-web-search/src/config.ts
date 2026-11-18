@@ -36,6 +36,8 @@ export interface Config {
   serperGl: string
   /** ISO 639-1 language for results. Empty uses Serper default. */
   serperHl: string
+  anysearchApiKey: string
+  anysearchBaseURL: string
 }
 
 export const SETTINGS_NS = 'dsh-web-search'
@@ -52,12 +54,13 @@ export const EXA_DEFAULT_BASE_URL = 'https://api.exa.ai'
 export const EXA_DEFAULT_PROVIDER_ID = 'exa'
 export const EXA_DEFAULT_HIGHLIGHTS = 1
 export const SERPER_DEFAULT_BASE_URL = 'https://google.serper.dev'
+export const ANYSEARCH_DEFAULT_BASE_URL = 'https://api.anysearch.com'
 
 export const Config: SchemaType<Config, Config, 'volatile'> = Schema.object({
   customSearch: Schema.boolean().default(true).description(
     'When on, web_search uses a backend configured on this page. When off, it uses DSH built-in DeepSeek search.',
   ),
-  searchProvider: Schema.union(['auto', 'baidu', 'doubao', 'tavily', 'exa', 'serper'] as const).default('auto'),
+  searchProvider: Schema.union(['auto', 'baidu', 'doubao', 'tavily', 'exa', 'serper', 'anysearch'] as const).default('auto'),
   fetchProvider: Schema.union(['auto', 'http', 'tavily', 'exa'] as const).default('auto').description(
     'web_fetch backend. Auto follows Tavily/Exa when that search backend is active; http uses DSH built-in fetch.',
   ),
@@ -86,6 +89,8 @@ export const Config: SchemaType<Config, Config, 'volatile'> = Schema.object({
   serperBaseURL: Schema.string().default(SERPER_DEFAULT_BASE_URL),
   serperGl: Schema.string().default('').description('Country code for geolocation (ISO 3166-1 alpha-2).'),
   serperHl: Schema.string().default('').description('Language code for results (ISO 639-1).'),
+  anysearchApiKey: Schema.string().role('secret').default(''),
+  anysearchBaseURL: Schema.string().default(ANYSEARCH_DEFAULT_BASE_URL),
 }).volatile()
 
 export const DEFAULT_CONFIG: Config = {
@@ -113,9 +118,11 @@ export const DEFAULT_CONFIG: Config = {
   serperBaseURL: SERPER_DEFAULT_BASE_URL,
   serperGl: '',
   serperHl: '',
+  anysearchApiKey: '',
+  anysearchBaseURL: ANYSEARCH_DEFAULT_BASE_URL,
 }
 
-export const AUTO_PROVIDER_ORDER = ['baidu', 'doubao', 'tavily', 'exa', 'serper'] as const
+export const AUTO_PROVIDER_ORDER = ['baidu', 'doubao', 'tavily', 'exa', 'serper', 'anysearch'] as const
 export const AUTO_FETCH_ORDER = ['tavily', 'exa'] as const
 
 export function baiduSearchModeOf(config: Pick<Config, 'baiduSearchMode'>): BaiduSearchMode {
