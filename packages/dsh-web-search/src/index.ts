@@ -47,6 +47,7 @@ export function apply(ctx: Context, config: Volatile<Config>): void {
     tavily: new SearchSuiteSearchProvider('tavily', resolve),
     exa: new SearchSuiteSearchProvider('exa', resolve),
     serper: new SearchSuiteSearchProvider('serper', resolve),
+    anysearch: new SearchSuiteSearchProvider('anysearch', resolve),
   }
 
   host.web.registerSearchProvider(new PluginSearchProvider(
@@ -77,7 +78,7 @@ export function apply(ctx: Context, config: Volatile<Config>): void {
     promptCtx.systemPrompt?.section({
       name: 'plugin:dsh-web-search',
       order: 111,
-      text: 'Use web_search for live lookup and web_fetch for page content. Settings → Web search chooses DSH built-in DeepSeek search or a custom backend (Baidu, Doubao, Tavily, Exa, Serper). web_fetch is chosen separately (auto follows Tavily/Exa search; or pin Tavily, Exa, or DSH http). Custom keys live there and are stripped from the shell. Do not curl Tavily, Exa, or Serper, and do not look for TAVILY_API_KEY, EXA_API_KEY, or SERPER_API_KEY in env or config files.',
+      text: 'Use web_search for live lookup and web_fetch for page content. Settings → Web search chooses DSH built-in DeepSeek search or a custom backend (Baidu, Doubao, Tavily, Exa, Serper, AnySearch). web_fetch is chosen separately (auto follows Tavily/Exa search; or pin Tavily, Exa, or DSH http). Custom keys live there and are stripped from the shell. Do not curl Tavily, Exa, Serper, or AnySearch, and do not look for TAVILY_API_KEY, EXA_API_KEY, SERPER_API_KEY, or ANYSEARCH_API_KEY in env or config files.',
     })
   })
 

@@ -296,7 +296,7 @@ function Seg(props: {
 
 function ProbeButton(props: {
   id: ProviderId
-  configured: boolean
+  canProbe: boolean
   disabled: boolean
   t: (key: string) => string
   result: ProbeState
@@ -311,7 +311,7 @@ function ProbeButton(props: {
   }, [props.id])
 
   const run = () => {
-    if (!props.configured) {
+    if (!props.canProbe) {
       props.onResult('need-key')
       return
     }
@@ -374,7 +374,7 @@ function ProbeButton(props: {
       'button',
       {
         type: 'button',
-        className: `dshWebSearchProbe-btn${props.configured ? ' is-primary' : ''}`,
+        className: `dshWebSearchProbe-btn${props.canProbe ? ' is-primary' : ''}`,
         disabled: props.disabled || busy,
         'aria-busy': busy,
         onClick: run,
@@ -458,6 +458,7 @@ export function SearchCard(props: SearchCardProps) {
     const kind = kindOf(id)
     if (kind === 'on') return props.t('active')
     if (kind === 'ready') return props.t('ready')
+    if (id === 'anysearch') return props.t('anysearchNoKey')
     return props.t('missing')
   }
   const setProbeResult = (id: ProviderId, result: ProbeState) => {
@@ -466,7 +467,7 @@ export function SearchCard(props: SearchCardProps) {
 
   const vendorPanel = (id: ProviderId): ReactNode => {
     const probeProps = {
-      configured: configured(id),
+      canProbe: id === 'anysearch' || configured(id),
       disabled,
       t,
       result: probeByVendor[id] ?? null,
@@ -690,6 +691,38 @@ export function SearchCard(props: SearchCardProps) {
         h(ProbeButton, { key: 'serper-probe', id: 'serper', ...probeProps }),
       ]
     }
+    if (id === 'anysearch') {
+      return [
+        h(KeyField, {
+          key: 'anysearch-key',
+          id: 'dsh-web-search-anysearch-key',
+          vendor: 'anysearch',
+          label: t('anysearchKey'),
+          hint: t('anysearchKeyHint'),
+          placeholder: 'ANYSEARCH_API_KEY',
+          configured: configured('anysearch'),
+          disabled,
+          t,
+          onSave: (next) => saveSecret('anysearchApiKey', next),
+        }),
+        h(
+          'details',
+          { key: 'anysearch-endpoint', className: 'dshWebSearchDetails' },
+          h('summary', null, t('endpoint')),
+          h(Field, {
+            htmlFor: 'dsh-web-search-anysearch-endpoint',
+            label: t('anysearchBaseURL'),
+            children: h(TextField, {
+              id: 'dsh-web-search-anysearch-endpoint',
+              value: value.anysearchBaseURL,
+              disabled,
+              onChange: (next) => set('anysearchBaseURL', next),
+            }),
+          }),
+        ),
+        h(ProbeButton, { key: 'anysearch-probe', id: 'anysearch', ...probeProps }),
+      ]
+    }
     return [
       h('p', { key: 'exa-note', className: 'dshWebSearchPanel-note' }, t('exaNote')),
       h(KeyField, {
@@ -777,7 +810,7 @@ export function SearchCard(props: SearchCardProps) {
       ),
     ),
     h('p', { className: 'dshWebSearchField-hint dshWebSearchSummary-hint' }, t('customSearchHint')),
-    custom && !anyConfigured
+    custom && !anyConfigured && status.active !== 'anysearch'
       ? h('p', { key: 'keys-hint', className: 'dshWebSearchField-hint dshWebSearchKeys-hint' }, t('keysHint'))
       : null,
     custom

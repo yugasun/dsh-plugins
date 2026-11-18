@@ -1,7 +1,7 @@
 {
   "name": "@yugasun/dsh-web-search",
   "version": "0.2.6",
-  "description": "Multi-provider web search for DeepSeek Harness: Baidu, Doubao, Tavily, Exa, and Serper backends for ctx.web.",
+  "description": "Multi-provider web search for DeepSeek Harness: Baidu, Doubao, Tavily, Exa, Serper, and AnySearch backends for ctx.web.",
   "license": "MIT",
   "author": "yugasun",
   "type": "module",
@@ -82,7 +82,7 @@
     "@deepseek-ai/schemastery": { "optional": true }
   },
   "dependencies": {
-    "searchsuite": "^0.2.0"
+    "searchsuite": "^0.3.0"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "~4.0.5",

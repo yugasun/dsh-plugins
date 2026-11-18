@@ -18,7 +18,7 @@ export type {
   WebSearchSource,
 }
 
-export const PROVIDER_IDS = ['baidu', 'doubao', 'tavily', 'exa', 'serper'] as const
+export const PROVIDER_IDS = ['baidu', 'doubao', 'tavily', 'exa', 'serper', 'anysearch'] as const
 export type ProviderId = (typeof PROVIDER_IDS)[number]
 export type SearchProviderChoice = 'auto' | ProviderId
 export const FETCH_PROVIDER_IDS = ['tavily', 'exa'] as const
@@ -35,7 +35,7 @@ export const BUILTIN_FETCH_PROVIDER_ID = 'http'
 export interface ProviderStatus {
   id: ProviderId
   available: boolean
-  /** True when an API key is present in settings or the environment. */
+  /** True when an API key is configured. */
   configured: boolean
 }
 

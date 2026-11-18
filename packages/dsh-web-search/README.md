@@ -2,7 +2,7 @@
 
 [![npm](https://img.shields.io/npm/v/@yugasun/dsh-web-search.svg)](https://www.npmjs.com/package/@yugasun/dsh-web-search)
 
-Multi-provider **web search** for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness). It registers Baidu, Doubao, Tavily, Exa, and Serper backends into `ctx.web`. The model-facing `web_search` / `web_fetch` tools stay the official `@deepseek-ai/dsh-tool-web` schema.
+Multi-provider **web search** for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness). It registers Baidu, Doubao, Tavily, Exa, Serper, and AnySearch backends into `ctx.web`. The model-facing `web_search` / `web_fetch` tools stay the official `@deepseek-ai/dsh-tool-web` schema.
 
 Compatible with DeepSeek Harness **0.2.1-rc.5** and Node.js **24+**.
 
@@ -25,7 +25,7 @@ dsh plugin --profile web add "$PWD/packages/dsh-web-search"
 dsh plugin --profile desktop add "$PWD/packages/dsh-web-search"
 ```
 
-Restart `dsh web`. Settings has a **Web search** page. Turn **Custom search** off to keep DSH built-in `web_search` (`deepseek-official`) and `web_fetch` (`http`); turn it on to use Baidu / Doubao / Tavily / Exa / Serper. **Page content** is independent: auto follows Tavily/Exa search, or pin Tavily, Exa, or DSH `http`.
+Restart `dsh web`. Settings has a **Web search** page. Turn **Custom search** off to keep DSH built-in `web_search` (`deepseek-official`) and `web_fetch` (`http`). Turn it on to use Baidu / Doubao / Tavily / Exa / Serper / AnySearch. **Page content** is independent. Auto follows Tavily/Exa search, or pin Tavily, Exa, or DSH `http`.
 
 ![Web search settings](docs/settings.png)
 
@@ -50,6 +50,7 @@ dsh plugin --profile web remove @yugasun/dsh-web-search
 | `tavily` | [Tavily Search](https://docs.tavily.com) `POST /search` and [Extract](https://docs.tavily.com/documentation/api-reference/endpoint/extract) `POST /extract` | `TAVILY_API_KEY` | LLM-oriented snippets plus an optional answer. Available as a `web_fetch` backend. |
 | `exa` | [Exa Search](https://docs.exa.ai) `POST /search` and [Contents](https://docs.exa.ai/reference/get-contents) `POST /contents` | `EXA_API_KEY` | Search returns **links only** (no answer). Default provider id is `exa`; change `exaProviderId` if the official `@deepseek-ai/dsh-web-search-exa` is also installed. Available as a `web_fetch` backend. |
 | `serper` | [Serper](https://serper.dev) Google Search `POST /search` | `SERPER_API_KEY` | Organic titles, links, and snippets. An answer box or knowledge-graph description is returned as `content` when present. Optional `serperGl` / `serperHl` set country and language. Not a `web_fetch` backend. |
+| `anysearch` | [AnySearch](https://anysearch.com/docs/api-endpoints/v1-search) `POST /v1/search` | `ANYSEARCH_API_KEY` (optional when selected explicitly) | Search returns up to 10 titles, links, and snippets. The `anysearchBaseURL` setting defaults to `https://api.anysearch.com`. |
 
 Keys are read in this order: plugin configuration in the active profile, DSH credentials (`TAVILY_API_KEY` and friends), then the launch environment / `~/.dsh/.env`. DeepSeek Harness imports legacy `~/.dsh/settings.yaml` settings into the active profile once, then renames the file to `.imported`. Settings secrets are never echoed back to the client. **Clear** in Settings, or emptying the field, unsets that key from the active profile plugin configuration. A `export TAVILY_API_KEY=…` inside an agent bash tool does **not** reach the harness process.
 
@@ -59,12 +60,12 @@ Installing the plugin can retarget official `web_search` at this package's facad
 
 - **Off**: `web_search` uses DSH built-in `deepseek-official`; `web_fetch` uses `http`
 - **On** (default): pick the search backend below
-  - **Auto** (default): first configured backend in order Baidu → Doubao → Tavily → Exa → Serper. If that request fails with a recoverable error, the next configured backend is tried and the harness log records which one was skipped. An explicit backend does not fail over.
-  - **Explicit**: Baidu / Doubao / Tavily / Exa / Serper
+  - **Auto** (default) picks the first backend with a key in order Baidu → Doubao → Tavily → Exa → Serper → AnySearch. If the request fails with a recoverable error, the next configured backend is tried and the harness log records which one was skipped.
+  - **Explicit** uses only the selected backend. Pick **AnySearch** to search without setting up an API key.
 - **Page content** (independent of search)
   - **Auto** (default): Tavily or Exa when that search backend is active; otherwise DSH built-in `http`
   - **Built-in HTTP** / **Tavily** / **Exa**: pin `web_fetch` regardless of which search backend is active
-- Each backend card has **Test connection**, which runs a one-result `web_search` against that vendor. Status "configured" still means a key is present; the probe tells you whether the key works.
+- Each backend card has **Test connection**, which runs a one-result `web_search` against that vendor. The AnySearch connection test also works without a key. The **Configured** status indicates that a key is present.
 
 ## Develop
 

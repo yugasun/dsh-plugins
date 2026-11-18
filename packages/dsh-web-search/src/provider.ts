@@ -40,6 +40,8 @@ function secretField(id: ProviderId): keyof ResolvedSecrets {
       return 'exaApiKey'
     case 'serper':
       return 'serperApiKey'
+    case 'anysearch':
+      return 'anysearchApiKey'
   }
 }
 
@@ -53,7 +55,7 @@ export function missingCredential(id: ProviderId): never {
 
 export function missingAnyCredential(): never {
   throw new WebError(
-    `No search backend has an API key (TAVILY_API_KEY, BAIDU_API_KEY, DOUBAO_API_KEY, EXA_API_KEY, or SERPER_API_KEY). ${KEY_HINT}`,
+    `No search backend has an API key (TAVILY_API_KEY, BAIDU_API_KEY, DOUBAO_API_KEY, EXA_API_KEY, SERPER_API_KEY, or ANYSEARCH_API_KEY). ${KEY_HINT} You can also select AnySearch explicitly to search without a key.`,
     'WEB_PROVIDER_CREDENTIAL_MISSING',
   )
 }
@@ -85,6 +87,9 @@ export class PluginSearchProvider implements WebSearchProvider {
     const ids = searchCandidates(config, secrets)
     if (ids.length === 0) {
       if (config.searchProvider === 'auto') missingAnyCredential()
+      if (config.searchProvider === 'anysearch') {
+        throw new WebError('AnySearch has no usable endpoint.', 'WEB_PROVIDER_CONFIGURED_UNAVAILABLE')
+      }
       missingCredential(config.searchProvider)
     }
     return firstSuccessful(

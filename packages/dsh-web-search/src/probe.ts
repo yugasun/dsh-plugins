@@ -1,6 +1,6 @@
 import type { WebSearchProvider } from '@deepseek-ai/dsh-web'
 import { errorCode } from './failover.ts'
-import { providerUsable, type ResolvedSecrets } from './select.ts'
+import { providerEndpointReady, providerUsable, type ResolvedSecrets } from './select.ts'
 import type { Config } from './config.ts'
 import type { ProviderId } from './types.ts'
 import { PROVIDER_IDS } from './types.ts'
@@ -28,12 +28,12 @@ export async function probeProvider(
   id: ProviderId,
   signal?: AbortSignal,
 ): Promise<ProbeResult> {
-  if (!providerUsable(id, config, secrets)) {
+  if (!(id === 'anysearch' ? providerEndpointReady(id, config) : providerUsable(id, config, secrets))) {
     return {
       ok: false,
       provider: id,
-      error: `${id} has no usable API key or endpoint`,
-      code: 'WEB_PROVIDER_CREDENTIAL_MISSING',
+      error: id === 'anysearch' ? `${id} has no usable endpoint` : `${id} has no usable API key or endpoint`,
+      code: id === 'anysearch' ? 'WEB_PROVIDER_CONFIGURED_UNAVAILABLE' : 'WEB_PROVIDER_CREDENTIAL_MISSING',
     }
   }
   try {

@@ -9,6 +9,7 @@ const secrets = {
   tavilyApiKey: 'tvly-test-key',
   exaApiKey: '',
   serperApiKey: '',
+  anysearchApiKey: '',
 }
 
 function config(patch: Partial<Config>): Config {
